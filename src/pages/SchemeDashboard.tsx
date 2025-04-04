@@ -127,10 +127,14 @@ export function SchemeDashboard() {
     return 'Original';
   };
 
-  // Format dates for display
-  const formatDate = (dateString: string) => {
+  // Format dates for display - Modified to handle both string and Date types
+  const formatDate = (dateValue: string | Date | undefined) => {
+    if (!dateValue) return 'Invalid Date';
+    
     try {
-      return format(new Date(dateString), 'MMM dd, yyyy');
+      // If it's already a Date object, use it directly
+      const dateObj = dateValue instanceof Date ? dateValue : new Date(dateValue);
+      return format(dateObj, 'MMM dd, yyyy');
     } catch (e) {
       return 'Invalid Date';
     }
