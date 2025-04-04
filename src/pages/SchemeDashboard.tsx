@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -41,7 +40,6 @@ export function SchemeDashboard() {
   const { toast } = useToast();
   const [importModalOpen, setImportModalOpen] = useState(false);
   
-  // Fetch schemes data
   const { 
     data: schemes, 
     isLoading, 
@@ -52,7 +50,6 @@ export function SchemeDashboard() {
     queryFn: () => schemeApi.getSchemes(),
   });
 
-  // Copy scheme mutation
   const copyMutation = useMutation({
     mutationFn: (id: string) => schemeApi.copyScheme(id),
     onSuccess: (data) => {
@@ -85,27 +82,23 @@ export function SchemeDashboard() {
     navigate('/schemes/new');
   };
 
-  // Handle scheme copy
   const handleCopyScheme = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation to scheme details
+    e.stopPropagation();
     copyMutation.mutate(id);
   };
 
-  // Handle scheme download
   const handleDownloadScheme = (id: string, name: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation to scheme details
+    e.stopPropagation();
     const safeFileName = name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     schemeApi.downloadScheme(id, `scheme_${safeFileName}.json`);
   };
 
-  // Handle view scheme
   const handleViewScheme = (id: string) => {
     navigate(`/schemes/${id}`);
   };
 
-  // Handle edit scheme
   const handleEditScheme = (id: string, status: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation to scheme details
+    e.stopPropagation();
     
     if (status.toUpperCase() !== 'DRAFT') {
       toast({
@@ -119,7 +112,6 @@ export function SchemeDashboard() {
     navigate(`/schemes/edit/${id}`);
   };
 
-  // Get origin label for a scheme
   const getSchemeOrigin = (scheme: Scheme) => {
     if (scheme.versionOf) {
       return 'Copied';
@@ -127,16 +119,19 @@ export function SchemeDashboard() {
     return 'Original';
   };
 
-  // Format dates for display
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateValue: string | Date) => {
+    if (!dateValue) return 'Not set';
+    
     try {
-      return format(new Date(dateString), 'MMM dd, yyyy');
+      if (dateValue instanceof Date) {
+        return format(dateValue, 'MMM dd, yyyy');
+      }
+      return format(new Date(dateValue), 'MMM dd, yyyy');
     } catch (e) {
       return 'Invalid Date';
     }
   };
 
-  // Get status badge color
   const getStatusColor = (status: string) => {
     switch (status.toUpperCase()) {
       case 'DRAFT':
@@ -268,7 +263,6 @@ export function SchemeDashboard() {
         </CardContent>
       </Card>
 
-      {/* Import Scheme Modal */}
       <ImportSchemeModal 
         open={importModalOpen}
         onOpenChange={setImportModalOpen}
