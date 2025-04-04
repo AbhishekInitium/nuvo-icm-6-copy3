@@ -35,9 +35,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { schemeApi } from '@/api/schemes';
+import { apiClient } from '@/api/client';
 import { cn } from '@/lib/utils';
 
-// Define schema for form validation
 const schemeFormSchema = z.object({
   name: z.string().min(3, { message: 'Scheme name must be at least 3 characters' }),
   description: z.string().optional(),
@@ -56,10 +56,8 @@ export function SchemeForm({ isEditing = false }) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Mock client ID
   const clientId = 'client_XYZ';
   
-  // Fetch available configs for dropdown
   const { data: configsData, isLoading: configsLoading } = useQuery({
     queryKey: ['configs'],
     queryFn: async () => {
@@ -68,7 +66,6 @@ export function SchemeForm({ isEditing = false }) {
     },
   });
   
-  // Default form values
   const defaultValues: Partial<SchemeFormValues> = {
     name: '',
     description: '',
@@ -76,37 +73,41 @@ export function SchemeForm({ isEditing = false }) {
     revenueBase: '',
   };
   
-  // Initialize form
   const form = useForm<SchemeFormValues>({
     resolver: zodResolver(schemeFormSchema),
     defaultValues,
   });
   
-  // Fetch existing scheme if editing
   const { data: existingScheme, isLoading: isLoadingScheme } = useQuery({
     queryKey: ['scheme', id],
     queryFn: () => schemeApi.getScheme(id as string),
     enabled: !!id && isEditing,
-    onSuccess: (data) => {
-      // Populate form with existing data
+  });
+  
+  useEffect(() => {
+    if (existingScheme && isEditing) {
       form.reset({
+        name: existingScheme.name,
+        description: existingScheme.description || '',
+        effectiveStart: new Date(existingScheme.effectiveStart),
+        effectiveEnd: new Date(existingScheme.effectiveEnd),
+        quotaAmount: existingScheme.quotaAmount,
+        revenueBase: existingScheme.revenueBase,
+        configName: existingScheme.configName,
+      });
+    }
+  }, [existingScheme, form, isEditing]);
+  
+  const createSchemeMutation = useMutation({
+    mutationFn: async (data: SchemeFormValues) => {
+      const schemeData: SchemeFormData = {
         name: data.name,
-        description: data.description || '',
-        effectiveStart: new Date(data.effectiveStart),
-        effectiveEnd: new Date(data.effectiveEnd),
+        description: data.description,
+        effectiveStart: data.effectiveStart,
+        effectiveEnd: data.effectiveEnd,
         quotaAmount: data.quotaAmount,
         revenueBase: data.revenueBase,
         configName: data.configName,
-      });
-    },
-  });
-  
-  // Create scheme mutation
-  const createSchemeMutation = useMutation({
-    mutationFn: async (data: SchemeFormValues) => {
-      const schemeData = {
-        ...data,
-        clientId,
         status: 'Draft',
       };
       const response = await schemeApi.createScheme(schemeData);
@@ -130,11 +131,16 @@ export function SchemeForm({ isEditing = false }) {
     },
   });
   
-  // Update scheme mutation
   const updateSchemeMutation = useMutation({
     mutationFn: async (data: SchemeFormValues) => {
-      const schemeData = {
-        ...data,
+      const schemeData: Partial<SchemeFormData> = {
+        name: data.name,
+        description: data.description,
+        effectiveStart: data.effectiveStart,
+        effectiveEnd: data.effectiveEnd,
+        quotaAmount: data.quotaAmount,
+        revenueBase: data.revenueBase,
+        configName: data.configName,
       };
       const response = await schemeApi.updateScheme(id as string, schemeData);
       return response;
@@ -157,7 +163,6 @@ export function SchemeForm({ isEditing = false }) {
     },
   });
   
-  // Form submission handler
   const onSubmit = (data: SchemeFormValues) => {
     setIsSubmitting(true);
     
@@ -168,7 +173,6 @@ export function SchemeForm({ isEditing = false }) {
     }
   };
   
-  // Handle cancel button
   const handleCancel = () => {
     if (isEditing && id) {
       navigate(`/schemes/${id}`);
