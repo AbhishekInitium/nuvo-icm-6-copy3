@@ -13,6 +13,7 @@ import { CreditSplitTable } from '@/components/scheme/CreditSplitTable';
 import { PayoutTierBuilder } from '@/components/scheme/PayoutTierBuilder';
 import { useSchemeForm } from '@/hooks/useSchemeForm';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function SchemeForm({ isEditing = false }) {
   const { form, isSubmitting, isLoadingScheme, onSubmit, handleCancel } = useSchemeForm(isEditing);
@@ -23,6 +24,7 @@ export function SchemeForm({ isEditing = false }) {
   const [adjustmentRules, setAdjustmentRules] = useState([]);
   const [exclusionRules, setExclusionRules] = useState([]);
   const [isPercentageRate, setIsPercentageRate] = useState(true);
+  const { user } = useAuth();
   
   // Sample fields for rule builders with correct type literals
   const sampleFields: Field[] = [
@@ -46,41 +48,118 @@ export function SchemeForm({ isEditing = false }) {
   
   if (isEditing && isLoadingScheme) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '16rem'
+      }}>
+        <Loader2 style={{
+          width: '2rem',
+          height: '2rem',
+          animation: 'spin 1s linear infinite',
+          color: '#004c97'
+        }} />
       </div>
     );
   }
   
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">
+    <div style={{
+      maxWidth: '48rem',
+      margin: '0 auto'
+    }}>
+      <h1 style={{
+        fontSize: '1.875rem',
+        fontWeight: 'bold',
+        marginBottom: '1.5rem',
+        color: '#1a202c'
+      }}>
         {isEditing ? 'Edit Scheme' : 'Create New Scheme'}
       </h1>
       
-      <Card>
+      <Card style={{
+        border: '1px solid #e2e8f0',
+        borderRadius: '0.5rem',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+      }}>
         <CardHeader>
-          <CardTitle>Scheme Details</CardTitle>
+          <CardTitle style={{
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            color: '#004c97'
+          }}>Scheme Details</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}>
               <SchemeBasicInfo control={form.control} />
               <SchemeDateRange control={form.control} />
               <SchemeMetrics control={form.control} />
               <SchemeConfig control={form.control} />
               
               {configSelected && (
-                <Tabs defaultValue="qualifying" className="mt-8">
-                  <TabsList className="grid grid-cols-5 mb-4">
-                    <TabsTrigger value="qualifying">Qualifying Criteria</TabsTrigger>
-                    <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
-                    <TabsTrigger value="exclusions">Exclusions</TabsTrigger>
-                    <TabsTrigger value="credits">Credit Distribution</TabsTrigger>
-                    <TabsTrigger value="payouts">Payout Structure</TabsTrigger>
+                <Tabs defaultValue="qualifying" style={{
+                  marginTop: '2rem'
+                }}>
+                  <TabsList className="grid grid-cols-5 mb-4" style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(5, 1fr)',
+                    gap: '0.5rem',
+                    marginBottom: '1rem',
+                    borderBottom: '1px solid #e2e8f0'
+                  }}>
+                    <TabsTrigger value="qualifying" style={{
+                      padding: '0.5rem',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontWeight: 'medium',
+                      borderBottom: '2px solid transparent',
+                      transition: 'all 0.2s'
+                    }}>Qualifying Criteria</TabsTrigger>
+                    <TabsTrigger value="adjustments" style={{
+                      padding: '0.5rem',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontWeight: 'medium',
+                      borderBottom: '2px solid transparent',
+                      transition: 'all 0.2s'
+                    }}>Adjustments</TabsTrigger>
+                    <TabsTrigger value="exclusions" style={{
+                      padding: '0.5rem',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontWeight: 'medium',
+                      borderBottom: '2px solid transparent',
+                      transition: 'all 0.2s'
+                    }}>Exclusions</TabsTrigger>
+                    <TabsTrigger value="credits" style={{
+                      padding: '0.5rem',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontWeight: 'medium',
+                      borderBottom: '2px solid transparent',
+                      transition: 'all 0.2s'
+                    }}>Credit Distribution</TabsTrigger>
+                    <TabsTrigger value="payouts" style={{
+                      padding: '0.5rem',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontWeight: 'medium',
+                      borderBottom: '2px solid transparent',
+                      transition: 'all 0.2s'
+                    }}>Payout Structure</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="qualifying">
+                  <TabsContent value="qualifying" style={{
+                    padding: '1rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem'
+                  }}>
                     <RuleBuilder
                       title="Qualifying Criteria"
                       fields={sampleFields}
@@ -89,7 +168,11 @@ export function SchemeForm({ isEditing = false }) {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="adjustments">
+                  <TabsContent value="adjustments" style={{
+                    padding: '1rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem'
+                  }}>
                     <RuleBuilder
                       title="Adjustment Rules"
                       fields={sampleFields}
@@ -98,7 +181,11 @@ export function SchemeForm({ isEditing = false }) {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="exclusions">
+                  <TabsContent value="exclusions" style={{
+                    padding: '1rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem'
+                  }}>
                     <RuleBuilder
                       title="Exclusion Rules"
                       fields={sampleFields}
@@ -107,14 +194,22 @@ export function SchemeForm({ isEditing = false }) {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="credits">
+                  <TabsContent value="credits" style={{
+                    padding: '1rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem'
+                  }}>
                     <CreditSplitTable
                       creditSplits={creditSplits}
                       onChange={setCreditSplits}
                     />
                   </TabsContent>
                   
-                  <TabsContent value="payouts">
+                  <TabsContent value="payouts" style={{
+                    padding: '1rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem'
+                  }}>
                     <PayoutTierBuilder
                       tiers={payoutTiers}
                       isPercentageRate={isPercentageRate}

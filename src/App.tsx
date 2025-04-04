@@ -12,6 +12,7 @@ import SchemeForm from "./pages/SchemeForm";
 import KpiConfigurator from "./pages/KpiConfigurator";
 import KpiConfigurations from "./pages/KpiConfigurations";
 import AgentDashboard from "./pages/AgentDashboard";
+import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -114,6 +115,31 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={["Agent"]}>
                     <AgentDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Settings - accessible to all roles */}
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Placeholder for Simulations route */}
+              <Route
+                path="/simulations"
+                element={
+                  <ProtectedRoute allowedRoles={["Manager"]}>
+                    <div className="p-8 text-center">
+                      <h1 className="text-2xl font-bold mb-4">Simulations</h1>
+                      <p className="text-muted-foreground">
+                        Simulation functionality will be added in a future update.
+                      </p>
+                    </div>
                   </ProtectedRoute>
                 }
               />
