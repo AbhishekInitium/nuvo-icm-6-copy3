@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Play, FileText, BarChart } from 'lucide-react';
@@ -70,59 +69,63 @@ export function SchemeList({
               </TableCell>
             </TableRow>
           ) : (
-            schemes.map((scheme) => (
-              <TableRow key={scheme.schemeId}>
-                <TableCell className="font-medium">{scheme.name}</TableCell>
-                <TableCell>{getStatusBadge(scheme.status)}</TableCell>
-                <TableCell>{format(new Date(scheme.createdAt), 'MMM dd, yyyy')}</TableCell>
-                <TableCell>
-                  {format(new Date(scheme.effectiveStart), 'MMM dd, yyyy')} - {format(new Date(scheme.effectiveEnd), 'MMM dd, yyyy')}
-                </TableCell>
-                <TableCell>
-                  {scheme.lastRun ? (
-                    <div className="text-sm">
-                      <div>{format(new Date(scheme.lastRun.date), 'MMM dd, yyyy')}</div>
-                      <div className="text-gray-500">{scheme.lastRun.agentsProcessed} agents</div>
+            schemes.map((scheme) => {
+              // Calculate isRunnable based on scheme status and running state
+              const isRunnable = scheme.status === 'Approved' && scheme.status !== 'ProdRun' && !runningScheme;
+
+              return (
+                <TableRow key={scheme.schemeId}>
+                  <TableCell className="font-medium">{scheme.name}</TableCell>
+                  <TableCell>{getStatusBadge(scheme.status)}</TableCell>
+                  <TableCell>{format(new Date(scheme.createdAt), 'MMM dd, yyyy')}</TableCell>
+                  <TableCell>
+                    {format(new Date(scheme.effectiveStart), 'MMM dd, yyyy')} - {format(new Date(scheme.effectiveEnd), 'MMM dd, yyyy')}
+                  </TableCell>
+                  <TableCell>
+                    {scheme.lastRun ? (
+                      <div className="text-sm">
+                        <div>{format(new Date(scheme.lastRun.date), 'MMM dd, yyyy')}</div>
+                        <div className="text-gray-500">{scheme.lastRun.agentsProcessed} agents</div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">Never run</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onSimulate(scheme)}
+                      >
+                        <Play className="h-4 w-4 mr-1" />
+                        Simulate
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        disabled={!isRunnable}
+                        onClick={() => onRunProduction(scheme)}
+                      >
+                        <BarChart className="h-4 w-4 mr-1" />
+                        Run Production
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onViewLogs(scheme)}
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        View Logs
+                      </Button>
                     </div>
-                  ) : (
-                    <span className="text-gray-400">Never run</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onSimulate(scheme)}
-                    >
-                      <Play className="h-4 w-4 mr-1" />
-                      Simulate
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      disabled={scheme.status !== 'Approved' || runningScheme || scheme.status === 'ProdRun'}
-                      onClick={() => onRunProduction(scheme)}
-                    >
-                      <BarChart className="h-4 w-4 mr-1" />
-                      Run Production
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => onViewLogs(scheme)}
-                    >
-                      <FileText className="h-4 w-4 mr-1" />
-                      View Logs
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>
     </div>
   );
 }
-
