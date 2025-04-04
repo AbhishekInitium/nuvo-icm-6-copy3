@@ -68,6 +68,20 @@ const SchemeSchema = new mongoose.Schema(
     postProcessor: {
       type: String,
       default: null
+    },
+    approvalInfo: {
+      approvedAt: {
+        type: Date,
+        default: null
+      },
+      approvedBy: {
+        type: String,
+        default: null
+      },
+      notes: {
+        type: String,
+        default: null
+      }
     }
   },
   {
