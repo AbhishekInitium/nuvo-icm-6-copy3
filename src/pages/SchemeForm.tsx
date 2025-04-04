@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { schemeApi } from '@/api/schemes';
 import { apiClient } from '@/api/client';
 import { cn } from '@/lib/utils';
+import { SchemeFormData } from '@/types/scheme';
 
 const schemeFormSchema = z.object({
   name: z.string().min(3, { message: 'Scheme name must be at least 3 characters' }),
