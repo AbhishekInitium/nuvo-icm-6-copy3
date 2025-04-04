@@ -13,6 +13,25 @@ export interface Scheme {
   };
 }
 
+export interface AgentResult {
+  agentId: string;
+  qualified: boolean;
+  commission: number;
+  totalSales?: number;
+  qualifyingCriteria: Array<{
+    rule: string;
+    result: boolean;
+    data: any;
+  }>;
+  exclusions: any[];
+  adjustments: any[];
+  customLogic: Array<{
+    rule: string;
+    result: boolean;
+    notes: string;
+  }>;
+}
+
 export interface ExecutionLog {
   runId: string;
   schemeId: string;
@@ -24,22 +43,5 @@ export interface ExecutionLog {
     failed: number;
     totalCommission: number;
   };
-  agents: Array<{
-    agentId: string;
-    qualified: boolean;
-    commission: number;
-    totalSales?: number;
-    qualifyingCriteria: Array<{
-      rule: string;
-      result: boolean;
-      data: any;
-    }>;
-    exclusions: any[];
-    adjustments: any[];
-    customLogic: Array<{
-      rule: string;
-      result: boolean;
-      notes: string;
-    }>;
-  }>;
+  agents: AgentResult[];
 }
