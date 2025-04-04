@@ -52,5 +52,50 @@ export const schemeApi = {
       clientId: 'client_XYZ' // This would normally come from context
     });
     return response.data.data;
+  },
+  
+  // Download a scheme as JSON
+  downloadScheme: async (id: string, fileName?: string): Promise<void> => {
+    const scheme = await schemeApi.getScheme(id);
+    
+    // Create a Blob from the JSON data
+    const blob = new Blob([JSON.stringify(scheme, null, 2)], { type: 'application/json' });
+    
+    // Create a download link and trigger the download
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName || `scheme_${scheme.schemeId || scheme.id}.json`;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  },
+  
+  // Copy a scheme (create a duplicate with new ID)
+  copyScheme: async (id: string): Promise<Scheme> => {
+    // First get the original scheme
+    const originalScheme = await schemeApi.getScheme(id);
+    
+    // Prepare data for the new scheme
+    const newSchemeData: SchemeFormData = {
+      name: `Copy of ${originalScheme.name}`,
+      description: originalScheme.description,
+      effectiveStart: originalScheme.effectiveStart,
+      effectiveEnd: originalScheme.effectiveEnd,
+      quotaAmount: originalScheme.quotaAmount,
+      revenueBase: originalScheme.revenueBase,
+      configName: originalScheme.configName,
+      versionOf: originalScheme.schemeId || originalScheme.id,
+      rules: originalScheme.rules,
+      payoutStructure: originalScheme.payoutStructure,
+      customRules: originalScheme.customRules,
+      status: 'Draft'
+    };
+    
+    // Create the new scheme
+    return await schemeApi.createScheme(newSchemeData);
   }
 };
