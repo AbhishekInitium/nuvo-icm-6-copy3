@@ -7,6 +7,10 @@ export interface Scheme {
   effectiveEnd: string;
   createdAt: string;
   updatedAt: string;
+  lastRun?: {
+    date: string;
+    agentsProcessed: number;
+  };
 }
 
 export interface ExecutionLog {

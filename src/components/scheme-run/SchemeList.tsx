@@ -58,13 +58,15 @@ export function SchemeList({
             <TableHead>Status</TableHead>
             <TableHead>Created Date</TableHead>
             <TableHead>Effective Period</TableHead>
+            {/* Optional: Last Run Summary */}
+            <TableHead>Last Run</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {schemes.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+              <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                 No schemes found. Create a scheme to get started.
               </TableCell>
             </TableRow>
@@ -76,6 +78,16 @@ export function SchemeList({
                 <TableCell>{format(new Date(scheme.createdAt), 'MMM dd, yyyy')}</TableCell>
                 <TableCell>
                   {format(new Date(scheme.effectiveStart), 'MMM dd, yyyy')} - {format(new Date(scheme.effectiveEnd), 'MMM dd, yyyy')}
+                </TableCell>
+                <TableCell>
+                  {scheme.lastRun ? (
+                    <div className="text-sm">
+                      <div>{format(new Date(scheme.lastRun.date), 'MMM dd, yyyy')}</div>
+                      <div className="text-gray-500">{scheme.lastRun.agentsProcessed} agents</div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">Never run</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
@@ -90,7 +102,7 @@ export function SchemeList({
                     <Button
                       variant="default"
                       size="sm"
-                      disabled={scheme.status !== 'Approved' || runningScheme}
+                      disabled={scheme.status !== 'Approved' || runningScheme || scheme.status === 'ProdRun'}
                       onClick={() => onRunProduction(scheme)}
                     >
                       <BarChart className="h-4 w-4 mr-1" />
