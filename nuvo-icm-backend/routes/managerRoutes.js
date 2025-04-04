@@ -18,4 +18,11 @@ router.post('/schemes', managerController.createScheme);
  */
 router.get('/schemes', managerController.getAllSchemes);
 
+/**
+ * @route   GET /api/manager/available-configs
+ * @desc    Get available configurations for scheme creation
+ * @access  Private
+ */
+router.get('/available-configs', managerController.getAvailableConfigs);
+
 module.exports = router;
