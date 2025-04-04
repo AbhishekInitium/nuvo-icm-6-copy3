@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 // Define user roles
-export type UserRole = "Admin" | "Manager" | "Agent";
+export type UserRole = "Admin" | "Manager" | "Agent" | "Finance";
 
 // Define auth user interface
 interface AuthUser {

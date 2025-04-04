@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Play, FileText, Upload, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -38,6 +37,7 @@ interface ExecutionLog {
     agentId: string;
     qualified: boolean;
     commission: number;
+    totalSales?: number;
     qualifyingCriteria: Array<{
       rule: string;
       result: boolean;
@@ -67,7 +67,6 @@ export default function SchemeRun() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [runningScheme, setRunningScheme] = useState(false);
 
-  // Fetch schemes on component mount
   useEffect(() => {
     fetchSchemes();
   }, []);
@@ -75,7 +74,6 @@ export default function SchemeRun() {
   const fetchSchemes = async () => {
     try {
       setLoading(true);
-      // Assuming client ID is available from auth context
       const clientId = user?.clientId;
       if (!clientId) {
         toast({
@@ -128,7 +126,6 @@ export default function SchemeRun() {
           title: 'Scheme Run Successfully',
           description: `Execution ID: ${response.data.data.runId}`,
         });
-        // Refresh schemes to show updated status
         fetchSchemes();
       } else {
         throw new Error(response.data.error || 'Failed to run scheme');
@@ -151,7 +148,6 @@ export default function SchemeRun() {
       const response = await apiClient.get(`/execute/logs?clientId=${user?.clientId}`);
       
       if (response.data.success) {
-        // Filter logs for the selected scheme
         const schemeLogs = response.data.data.filter(
           (log: ExecutionLog) => log.schemeId === scheme.schemeId
         );
@@ -202,14 +198,11 @@ export default function SchemeRun() {
     try {
       setRunningScheme(true);
       
-      // In a real implementation, you would upload the file and then submit for simulation
-      // Here we're just simulating the API call without file upload
       const formData = new FormData();
       formData.append('file', uploadFile);
       formData.append('schemeId', selectedScheme.schemeId);
       formData.append('clientId', user?.clientId || '');
 
-      // Mock simulation - in real implementation replace with actual API call
       const response = await apiClient.post('/execute/run', {
         schemeId: selectedScheme.schemeId,
         mode: 'simulation',
@@ -329,7 +322,6 @@ export default function SchemeRun() {
         </div>
       )}
 
-      {/* Simulation Modal */}
       <Dialog open={simulateModalOpen} onOpenChange={setSimulateModalOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -378,7 +370,6 @@ export default function SchemeRun() {
         </DialogContent>
       </Dialog>
 
-      {/* Execution Logs Modal */}
       <Dialog open={logsModalOpen} onOpenChange={setLogsModalOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
