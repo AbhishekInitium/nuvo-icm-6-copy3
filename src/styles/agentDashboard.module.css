@@ -1,0 +1,139 @@
+
+.dashboardContainer {
+  composes: container from './common.module.css';
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  composes: heading from './common.module.css';
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 1.125rem;
+}
+
+.filterSection {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.filterInput {
+  composes: input from './common.module.css';
+  max-width: 300px;
+}
+
+.schemeGrid {
+  composes: grid from './common.module.css';
+  margin-bottom: 2rem;
+}
+
+.schemeCard {
+  composes: card from './common.module.css';
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid transparent;
+}
+
+.schemeCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.selectedCard {
+  border-color: #004c97;
+}
+
+.schemeHeader {
+  composes: cardHeader from './common.module.css';
+}
+
+.schemeTitle {
+  composes: cardTitle from './common.module.css';
+}
+
+.schemeDetail {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.detailLabel {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.earningSummary {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+  text-align: center;
+}
+
+.earningAmount {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #004c97;
+}
+
+.resultDetails {
+  composes: card from './common.module.css';
+  margin-top: 2rem;
+}
+
+.detailsHeader {
+  composes: cardHeader from './common.module.css';
+}
+
+.detailsTitle {
+  composes: cardTitle from './common.module.css';
+}
+
+.detailsTable {
+  composes: table from './common.module.css';
+}
+
+.alert {
+  composes: card from './common.module.css';
+  background-color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.alertIcon {
+  color: #6b7280;
+}
+
+.alertContent {
+  flex: 1;
+}
+
+.alertTitle {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+}
+
+@media (max-width: 768px) {
+  .filterSection {
+    flex-direction: column;
+  }
+  
+  .filterInput {
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,106 @@
+
+.dashboardContainer {
+  composes: container from './common.module.css';
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  composes: heading from './common.module.css';
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 1.125rem;
+}
+
+.tabList {
+  composes: tabs from './common.module.css';
+}
+
+.tab {
+  composes: tab from './common.module.css';
+  flex: 1;
+  text-align: center;
+}
+
+.tabActive {
+  composes: tabActive from './common.module.css';
+}
+
+.tabContent {
+  display: none;
+}
+
+.tabContentActive {
+  display: block;
+}
+
+.approvalTable {
+  composes: table from './common.module.css';
+}
+
+.actionsCell {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.viewButton {
+  composes: button buttonOutline from './common.module.css';
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.approveButton {
+  composes: button buttonPrimary from './common.module.css';
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.exportButton {
+  composes: button buttonOutline from './common.module.css';
+  margin-bottom: 1rem;
+  align-self: flex-end;
+}
+
+.filterSection {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.filterInput {
+  composes: input from './common.module.css';
+  max-width: 300px;
+}
+
+.noData {
+  composes: card from './common.module.css';
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.alertCard {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.alertTitle {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}

@@ -1,0 +1,90 @@
+
+.schemesContainer {
+  composes: container from './common.module.css';
+}
+
+.header {
+  composes: flexBetween from './common.module.css';
+  margin-bottom: 2rem;
+}
+
+.schemeGrid {
+  composes: grid from './common.module.css';
+}
+
+.schemeCard {
+  composes: card from './common.module.css';
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.schemeCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.schemeHeader {
+  composes: cardHeader from './common.module.css';
+  composes: flexBetween from './common.module.css';
+}
+
+.schemeTitle {
+  composes: cardTitle from './common.module.css';
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.schemeDescription {
+  color: #6b7280;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 3rem;
+}
+
+.schemeMeta {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.schemeMetaItem {
+  display: flex;
+  justify-content: space-between;
+}
+
+.schemeMetaLabel {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.schemeMetaValue {
+  color: #4a5568;
+}
+
+.schemeActions {
+  margin-top: 1rem;
+}
+
+.noSchemes {
+  composes: card from './common.module.css';
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+}

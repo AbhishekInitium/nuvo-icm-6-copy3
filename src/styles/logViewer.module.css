@@ -1,0 +1,102 @@
+
+.logContainer {
+  composes: container from './common.module.css';
+}
+
+.header {
+  composes: flexBetween from './common.module.css';
+  margin-bottom: 2rem;
+}
+
+.logCard {
+  composes: card from './common.module.css';
+}
+
+.logHeader {
+  composes: cardHeader from './common.module.css';
+}
+
+.logTitle {
+  composes: cardTitle from './common.module.css';
+}
+
+.filterSection {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.filterInput {
+  composes: input from './common.module.css';
+  max-width: 300px;
+}
+
+.logTable {
+  composes: table from './common.module.css';
+}
+
+.logDetails {
+  composes: card from './common.module.css';
+  margin-top: 1.5rem;
+}
+
+.logDetailsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.logDetailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.logDetailLabel {
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.logDetailValue {
+  color: #1f2937;
+  font-family: monospace;
+  white-space: pre-wrap;
+  background: #f9fafb;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.downloadButton {
+  composes: button buttonOutline from './common.module.css';
+}
+
+.noLogs {
+  composes: card from './common.module.css';
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+@media (max-width: 768px) {
+  .filterSection {
+    flex-direction: column;
+  }
+  
+  .filterInput {
+    max-width: 100%;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+  }
+}

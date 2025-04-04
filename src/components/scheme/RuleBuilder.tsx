@@ -4,7 +4,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import styles from '@/styles/ruleBuilder.module.css';
 
 export interface Field {
   id: string;
@@ -94,24 +94,24 @@ export function RuleBuilder({ title, fields, rules, onChange }: RuleBuilderProps
   };
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="text-lg font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className={styles.ruleCard}>
+      <div className={styles.ruleHeader}>
+        <h3 className={styles.ruleTitle}>{title}</h3>
+      </div>
+      <div className={styles.ruleContent}>
         {rules.length === 0 ? (
-          <div className="flex justify-center p-4 text-sm text-muted-foreground">
+          <div className={styles.noRules}>
             No rules defined. Click "Add Rule" to create one.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className={styles.ruleList}>
             {rules.map(rule => {
               const fieldType = getFieldType(rule.field);
               const operators = getOperatorsForFieldType(fieldType);
               
               return (
-                <div key={rule.id} className="flex items-center gap-2">
-                  <div className="grid grid-cols-3 gap-2 flex-1">
+                <div key={rule.id} className={styles.ruleItem}>
+                  <div className={styles.ruleGrid}>
                     <Select 
                       value={rule.field} 
                       onValueChange={(value) => updateRule(rule.id, 'field', value)}
@@ -156,27 +156,27 @@ export function RuleBuilder({ title, fields, rules, onChange }: RuleBuilderProps
                     />
                   </div>
                   
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
+                  <button 
+                    className={styles.removeButton}
                     onClick={() => removeRule(rule.id)}
+                    type="button"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               );
             })}
           </div>
         )}
         
-        <Button 
-          variant="outline" 
-          className="mt-4 w-full"
+        <button 
+          className={styles.addRuleButton}
           onClick={addRule}
+          type="button"
         >
-          <Plus className="h-4 w-4 mr-2" /> Add Rule
-        </Button>
-      </CardContent>
-    </Card>
+          <Plus size={16} /> Add Rule
+        </button>
+      </div>
+    </div>
   );
 }

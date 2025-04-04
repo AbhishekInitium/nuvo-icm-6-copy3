@@ -1,0 +1,83 @@
+
+.ruleCard {
+  composes: card from './common.module.css';
+  margin-bottom: 1.5rem;
+}
+
+.ruleHeader {
+  composes: cardHeader from './common.module.css';
+}
+
+.ruleTitle {
+  composes: cardTitle from './common.module.css';
+}
+
+.ruleContent {
+  composes: cardContent from './common.module.css';
+}
+
+.ruleList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ruleItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ruleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  flex-grow: 1;
+}
+
+.noRules {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+  color: #6b7280;
+  text-align: center;
+  font-size: 0.875rem;
+  border: 1px dashed #d1d5db;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.addRuleButton {
+  composes: button buttonOutline from './common.module.css';
+  width: 100%;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.removeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 9999px;
+}
+
+.removeButton:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+@media (max-width: 768px) {
+  .ruleGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .ruleItem {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

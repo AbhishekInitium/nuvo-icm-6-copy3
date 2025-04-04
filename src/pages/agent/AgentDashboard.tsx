@@ -6,9 +6,8 @@ import { AgentScheme, AgentResult, agentApi } from '@/api/agent';
 import { AgentSchemeCard } from '@/components/agent/AgentSchemeCard';
 import { AgentResultDetails } from '@/components/agent/AgentResultDetails';
 import { AgentFilters } from '@/components/agent/AgentFilters';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import styles from '@/styles/agentDashboard.module.css';
 
 export default function AgentDashboard() {
   const { user } = useAuth();
@@ -100,26 +99,26 @@ export default function AgentDashboard() {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">My Incentives</h1>
-        <p className="text-muted-foreground">
-          View your incentive schemes and earnings
-        </p>
+    <div className={styles.dashboardContainer}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>My Incentives</h1>
+        <p className={styles.subtitle}>View your incentive schemes and earnings</p>
       </div>
 
       {loading ? (
-        <div className="py-10 text-center">
+        <div className={styles.loader}>
           <p>Loading your incentive schemes...</p>
         </div>
       ) : schemes.length === 0 ? (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>No incentive schemes</AlertTitle>
-          <AlertDescription>
-            You don't have any incentive schemes assigned to you yet.
-          </AlertDescription>
-        </Alert>
+        <div className={styles.alert}>
+          <div className={styles.alertIcon}>
+            <Info size={20} />
+          </div>
+          <div className={styles.alertContent}>
+            <h4 className={styles.alertTitle}>No incentive schemes</h4>
+            <p>You don't have any incentive schemes assigned to you yet.</p>
+          </div>
+        </div>
       ) : (
         <>
           <AgentFilters 
@@ -129,20 +128,70 @@ export default function AgentDashboard() {
             setSchemeNameFilter={setSchemeNameFilter}
           />
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className={styles.schemeGrid}>
             {filteredSchemes.map((scheme) => (
-              <AgentSchemeCard
+              <div
                 key={scheme.schemeId}
-                scheme={scheme}
-                result={results[scheme.schemeId]}
-                isSelected={selectedScheme === scheme.schemeId}
+                className={`${styles.schemeCard} ${selectedScheme === scheme.schemeId ? styles.selectedCard : ''}`}
                 onClick={() => handleSchemeClick(scheme.schemeId)}
-              />
+              >
+                <div className={styles.schemeHeader}>
+                  <h3 className={styles.schemeTitle}>{scheme.schemeName}</h3>
+                </div>
+                <div>
+                  <div className={styles.schemeDetail}>
+                    <span className={styles.detailLabel}>Period:</span>
+                    <span>{new Date(scheme.startDate).toLocaleDateString()} - {new Date(scheme.endDate).toLocaleDateString()}</span>
+                  </div>
+                  <div className={styles.schemeDetail}>
+                    <span className={styles.detailLabel}>Executed:</span>
+                    <span>{new Date(scheme.executedAt).toLocaleDateString()}</span>
+                  </div>
+                  {results[scheme.schemeId] && (
+                    <div className={styles.earningSummary}>
+                      <div className={styles.detailLabel}>Total Earnings</div>
+                      <div className={styles.earningAmount}>
+                        ${results[scheme.schemeId]?.totalEarnings.toFixed(2)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
 
           {selectedScheme && results[selectedScheme] && (
-            <AgentResultDetails result={results[selectedScheme]!} />
+            <div className={styles.resultDetails}>
+              <div className={styles.detailsHeader}>
+                <h3 className={styles.detailsTitle}>Incentive Details</h3>
+              </div>
+              <table className={styles.detailsTable}>
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Target</th>
+                    <th>Achieved</th>
+                    <th>Achievement %</th>
+                    <th>Payout</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results[selectedScheme]?.metrics.map((metric, index) => (
+                    <tr key={index}>
+                      <td>{metric.name}</td>
+                      <td>{metric.target}</td>
+                      <td>{metric.actual}</td>
+                      <td>{(metric.achievement * 100).toFixed(1)}%</td>
+                      <td>${metric.payout.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'right', fontWeight: 'bold' }}>Total</td>
+                    <td style={{ fontWeight: 'bold' }}>${results[selectedScheme]?.totalEarnings.toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}

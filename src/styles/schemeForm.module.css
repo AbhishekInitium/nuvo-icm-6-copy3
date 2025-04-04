@@ -1,0 +1,94 @@
+
+.formContainer {
+  composes: container from './common.module.css';
+  max-width: 768px;
+}
+
+.formCard {
+  composes: card from './common.module.css';
+}
+
+.formHeader {
+  composes: cardHeader from './common.module.css';
+}
+
+.formTitle {
+  composes: cardTitle from './common.module.css';
+}
+
+.formContent {
+  composes: cardContent from './common.module.css';
+}
+
+.formGroup {
+  composes: formGroup from './common.module.css';
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  composes: label from './common.module.css';
+}
+
+.input {
+  composes: input from './common.module.css';
+}
+
+.textarea {
+  composes: textarea from './common.module.css';
+}
+
+.select {
+  composes: select from './common.module.css';
+}
+
+.formTabs {
+  composes: tabs from './common.module.css';
+}
+
+.formTab {
+  composes: tab from './common.module.css';
+}
+
+.formTabActive {
+  composes: tabActive from './common.module.css';
+}
+
+.formActions {
+  composes: cardFooter from './common.module.css';
+}
+
+.submitButton {
+  composes: button buttonPrimary from './common.module.css';
+}
+
+.cancelButton {
+  composes: button buttonOutline from './common.module.css';
+}
+
+.divider {
+  margin: 2rem 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.requiredLabel::after {
+  content: " *";
+  color: #ef4444;
+}
+
+.errorMessage {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}

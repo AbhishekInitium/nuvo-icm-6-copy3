@@ -1,216 +1,161 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { opsApi } from '@/api/ops';
-import { Scheme } from '@/types/scheme';
-import { 
-  Table, TableBody, TableCaption, TableCell, 
-  TableHead, TableHeader, TableRow 
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Search } from 'lucide-react';
-import { format } from 'date-fns';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { SchemeDetailsModal } from './SchemeDetailsModal';
-import { ApproveSchemeModal } from './ApproveSchemeModal';
-import { Input } from '@/components/ui/input';
+import { Eye, CheckCircle } from 'lucide-react';
+import styles from '@/styles/opsDashboard.module.css';
+
+interface SchemeForApproval {
+  id: string;
+  name: string;
+  createdAt: string;
+  createdBy: string;
+  status: string;
+}
 
 export function SchemesApprovalTab() {
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [schemes, setSchemes] = useState<Scheme[]>([]);
-  const [filteredSchemes, setFilteredSchemes] = useState<Scheme[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [schemes, setSchemes] = useState<SchemeForApproval[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
-
-  // Fetch schemes pending approval
+  
   useEffect(() => {
     const fetchSchemes = async () => {
-      if (!user?.clientId) return;
-      
       try {
-        setIsLoading(true);
-        const data = await opsApi.getSchemesForApproval(user.clientId);
-        setSchemes(data);
-        setFilteredSchemes(data);
+        setLoading(true);
+        
+        // Mock API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Mock data
+        const mockSchemes = [
+          { 
+            id: '1', 
+            name: 'Q1 2025 Sales Incentive', 
+            createdAt: '2024-12-15T10:30:00Z',
+            createdBy: 'john.doe@example.com',
+            status: 'Draft'
+          },
+          { 
+            id: '2', 
+            name: 'Customer Retention Bonus', 
+            createdAt: '2024-12-18T14:45:00Z',
+            createdBy: 'jane.smith@example.com',
+            status: 'Simulated'
+          }
+        ];
+        
+        setSchemes(mockSchemes);
       } catch (error) {
-        console.error('Error fetching schemes:', error);
+        console.error('Error fetching schemes for approval:', error);
         toast({
-          title: 'Error',
-          description: 'Failed to load schemes pending approval.',
-          variant: 'destructive',
+          title: "Error",
+          description: "Failed to load schemes pending approval",
+          variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-
-    fetchSchemes();
-  }, [user, toast]);
-
-  // Filter schemes based on search term
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredSchemes(schemes);
-      return;
-    }
-
-    const filtered = schemes.filter(
-      scheme => 
-        scheme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        scheme.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredSchemes(filtered);
-  }, [searchTerm, schemes]);
-
-  // Handle approve scheme
-  const handleApproveScheme = async (schemeId: string, notes?: string) => {
-    if (!user?.clientId) return;
     
+    fetchSchemes();
+  }, [toast]);
+  
+  const handleViewScheme = (id: string) => {
+    // In a real app, this would likely open a modal or navigate to a details page
+    console.log(`View scheme details for ID: ${id}`);
+  };
+  
+  const handleApproveScheme = async (id: string) => {
     try {
-      const response = await opsApi.approveScheme(schemeId, user.clientId, notes);
+      // Mock API call
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (response.success) {
-        toast({
-          title: 'Success',
-          description: 'Scheme has been approved successfully.',
-        });
-        
-        // Update the local state
-        setSchemes(prevSchemes => 
-          prevSchemes.filter(scheme => scheme.schemeId !== schemeId)
-        );
-        setFilteredSchemes(prevFiltered => 
-          prevFiltered.filter(scheme => scheme.schemeId !== schemeId)
-        );
-      } else {
-        throw new Error('Failed to approve scheme');
-      }
+      // Update local state
+      setSchemes(prevSchemes => 
+        prevSchemes.filter(scheme => scheme.id !== id)
+      );
+      
+      toast({
+        title: "Scheme Approved",
+        description: "The scheme has been approved successfully",
+      });
     } catch (error) {
       console.error('Error approving scheme:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to approve the scheme. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to approve scheme",
+        variant: "destructive",
       });
-    } finally {
-      setIsApproveModalOpen(false);
     }
   };
-
-  // Handle view scheme details
-  const handleViewScheme = (scheme: Scheme) => {
-    setSelectedScheme(scheme);
-    setIsDetailsModalOpen(true);
-  };
-
-  // Handle open approve modal
-  const handleOpenApproveModal = (scheme: Scheme) => {
-    setSelectedScheme(scheme);
-    setIsApproveModalOpen(true);
-  };
-
-  // Render status badge
-  const renderStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Draft':
-        return <Badge variant="secondary">Draft</Badge>;
-      case 'Simulated':
-        return <Badge variant="outline">Simulated</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
+  
+  // Filter schemes based on search term
+  const filteredSchemes = schemes.filter(scheme => 
+    scheme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    scheme.createdBy.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  if (loading) {
+    return <div>Loading schemes for approval...</div>;
+  }
+  
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Schemes Pending Approval</h2>
-        <div className="relative w-64">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search schemes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </div>
-      ) : filteredSchemes.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          {searchTerm ? 'No schemes found matching your search.' : 'No schemes pending approval.'}
-        </div>
-      ) : (
-        <Table>
-          <TableCaption>List of schemes pending approval.</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Scheme Name</TableHead>
-              <TableHead>Created Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Effective Period</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredSchemes.map((scheme) => (
-              <TableRow key={scheme.schemeId || scheme.id}>
-                <TableCell className="font-medium">{scheme.name}</TableCell>
-                <TableCell>
-                  {format(new Date(scheme.createdAt), 'PP')}
-                </TableCell>
-                <TableCell>{renderStatusBadge(scheme.status)}</TableCell>
-                <TableCell>
-                  {format(new Date(scheme.effectiveStart), 'PP')} - {format(new Date(scheme.effectiveEnd), 'PP')}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mr-2"
-                    onClick={() => handleViewScheme(scheme)}
-                  >
-                    View
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleOpenApproveModal(scheme)}
-                  >
-                    Approve
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {selectedScheme && (
+    <div>
+      {schemes.length > 0 ? (
         <>
-          <SchemeDetailsModal
-            isOpen={isDetailsModalOpen}
-            onClose={() => setIsDetailsModalOpen(false)}
-            scheme={selectedScheme}
-          />
-          <ApproveSchemeModal
-            isOpen={isApproveModalOpen}
-            onClose={() => setIsApproveModalOpen(false)}
-            scheme={selectedScheme}
-            onApprove={handleApproveScheme}
-          />
+          <div className={styles.filterSection}>
+            <input
+              type="text"
+              placeholder="Search by scheme name or creator"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={styles.filterInput}
+            />
+          </div>
+          
+          <table className={styles.approvalTable}>
+            <thead>
+              <tr>
+                <th>Scheme Name</th>
+                <th>Created Date</th>
+                <th>Creator</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSchemes.map((scheme) => (
+                <tr key={scheme.id}>
+                  <td>{scheme.name}</td>
+                  <td>{new Date(scheme.createdAt).toLocaleDateString()}</td>
+                  <td>{scheme.createdBy}</td>
+                  <td>{scheme.status}</td>
+                  <td className={styles.actionsCell}>
+                    <button 
+                      className={styles.viewButton}
+                      onClick={() => handleViewScheme(scheme.id)}
+                    >
+                      <Eye size={16} />
+                      View
+                    </button>
+                    <button 
+                      className={styles.approveButton}
+                      onClick={() => handleApproveScheme(scheme.id)}
+                    >
+                      <CheckCircle size={16} />
+                      Approve
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </>
+      ) : (
+        <div className={styles.noData}>
+          <p>No schemes pending approval at this time.</p>
+        </div>
       )}
     </div>
   );
