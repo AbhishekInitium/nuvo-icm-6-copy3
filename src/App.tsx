@@ -6,13 +6,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
 import { SchemeDetails } from "./pages/schemes/SchemeDetails";
-import { SchemeDetail } from "./pages/schemes/SchemeDetail";
 import { SchemesList } from "./pages/schemes/SchemesList";
 import SchemeDashboard from "./pages/SchemeDashboard";
 import SchemeForm from "./pages/SchemeForm";
 import KpiConfigurator from "./pages/KpiConfigurator";
 import KpiConfigurations from "./pages/KpiConfigurations";
+import AgentDashboard from "./pages/AgentDashboard";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,26 +26,107 @@ const queryClient = new QueryClient({
   },
 });
 
+// Component for home route redirection based on role
+const HomeRedirect = () => {
+  const { user } = useAuth();
+  
+  if (user?.role === "Admin") return <Navigate to="/kpi-configurator" replace />;
+  if (user?.role === "Agent") return <Navigate to="/agent-dashboard" replace />;
+  return <Navigate to="/schemes" replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/schemes" replace />} />
-          <Route path="/" element={<MainLayout />}>
-            <Route path="/schemes" element={<SchemeDashboard />} />
-            <Route path="/schemes/new" element={<SchemeForm />} />
-            <Route path="/schemes/edit/:id" element={<SchemeForm isEditing />} />
-            <Route path="/schemes/:id" element={<SchemeDetails />} />
-            <Route path="/kpi-configurator" element={<KpiConfigurator />} />
-            <Route path="/kpi-configurations" element={<KpiConfigurations />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-      <Toaster />
-      <Sonner />
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public route for login */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Protected routes within MainLayout */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            >
+              {/* Redirect based on role */}
+              <Route index element={<HomeRedirect />} />
+              
+              {/* Manager Routes */}
+              <Route
+                path="/schemes"
+                element={
+                  <ProtectedRoute allowedRoles={["Manager"]}>
+                    <SchemeDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/schemes/new"
+                element={
+                  <ProtectedRoute allowedRoles={["Manager"]}>
+                    <SchemeForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/schemes/edit/:id"
+                element={
+                  <ProtectedRoute allowedRoles={["Manager"]}>
+                    <SchemeForm isEditing />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/schemes/:id"
+                element={
+                  <ProtectedRoute allowedRoles={["Manager"]}>
+                    <SchemeDetails />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Admin Routes */}
+              <Route
+                path="/kpi-configurator"
+                element={
+                  <ProtectedRoute allowedRoles={["Admin"]}>
+                    <KpiConfigurator />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/kpi-configurations"
+                element={
+                  <ProtectedRoute allowedRoles={["Admin"]}>
+                    <KpiConfigurations />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Agent Routes */}
+              <Route
+                path="/agent-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["Agent"]}>
+                    <AgentDashboard />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            
+            {/* 404 page */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+          <Sonner />
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
