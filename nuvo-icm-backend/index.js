@@ -5,6 +5,7 @@ const healthRoutes = require('./routes/health.routes');
 const managerRoutes = require('./routes/managerRoutes');
 const adminConfigRoutes = require('./routes/adminConfigRoutes');
 const executionRoutes = require('./routes/executionRoutes');
+const agentRoutes = require('./routes/agentRoutes');
 
 // Initialize Express
 const app = express();
@@ -20,6 +21,7 @@ app.use('/api', healthRoutes);
 app.use('/api/manager', managerRoutes);
 app.use('/api/admin', adminConfigRoutes);
 app.use('/api/execute', executionRoutes);
+app.use('/api/agent', agentRoutes);
 
 // Default route
 app.get('/', (req, res) => {
