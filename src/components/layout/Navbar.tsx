@@ -14,6 +14,9 @@ export function Navbar() {
           <Link to="/schemes/new">
             <Button variant="ghost">Create Scheme</Button>
           </Link>
+          <Link to="/kpi-configurations">
+            <Button variant="ghost">KPI Configurations</Button>
+          </Link>
         </div>
       </div>
     </nav>
