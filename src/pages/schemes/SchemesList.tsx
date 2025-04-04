@@ -1,9 +1,10 @@
 
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 // Define the Scheme type since we're missing the import
 type Scheme = {
@@ -23,6 +24,7 @@ export function SchemesList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSchemes = async () => {
@@ -76,14 +78,8 @@ export function SchemesList() {
     fetchSchemes();
   }, [toast]);
 
-  const getStatusBadgeClass = (status: Scheme['status']) => {
-    switch (status) {
-      case 'DRAFT': return 'bg-yellow-100 text-yellow-800';
-      case 'APPROVED': return 'bg-blue-100 text-blue-800';
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'COMPLETED': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const handleSchemeClick = (id: string) => {
+    navigate(`/schemes/${id}`);
   };
 
   return (
@@ -109,36 +105,51 @@ export function SchemesList() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {schemes.map((scheme) => (
-            <Link key={scheme.id} to={`/schemes/${scheme.id}`}>
-              <Card className="h-full hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">{scheme.name}</CardTitle>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(scheme.status)}`}>
-                      {scheme.status}
-                    </span>
+            <Card 
+              key={scheme.id} 
+              className="h-full hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleSchemeClick(scheme.id)}
+            >
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-xl">{scheme.name}</CardTitle>
+                  <Badge variant={getStatusVariant(scheme.status)}>
+                    {scheme.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground mb-4">
+                  {scheme.description || 'No description'}
+                </div>
+                <div className="text-sm">
+                  <div className="flex justify-between">
+                    <span>Start Date:</span>
+                    <span>{new Date(scheme.startDate).toLocaleDateString()}</span>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-muted-foreground mb-4">
-                    {scheme.description || 'No description'}
+                  <div className="flex justify-between">
+                    <span>End Date:</span>
+                    <span>{new Date(scheme.endDate).toLocaleDateString()}</span>
                   </div>
-                  <div className="text-sm">
-                    <div className="flex justify-between">
-                      <span>Start Date:</span>
-                      <span>{new Date(scheme.startDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>End Date:</span>
-                      <span>{new Date(scheme.endDate).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
     </div>
   );
+}
+
+// Helper function for badge variant
+function getStatusVariant(status: string) {
+  switch (status) {
+    case 'DRAFT':
+    case 'Draft': return 'secondary';
+    case 'APPROVED':
+    case 'Approved': return 'success';
+    case 'ACTIVE': return 'default';
+    case 'COMPLETED': return 'outline';
+    default: return 'outline';
+  }
 }

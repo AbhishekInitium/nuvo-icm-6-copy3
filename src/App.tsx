@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
+import { SchemeDetails } from "./pages/schemes/SchemeDetails";
 import { SchemeDetail } from "./pages/schemes/SchemeDetail";
 import { SchemesList } from "./pages/schemes/SchemesList";
 import SchemeDashboard from "./pages/SchemeDashboard";
@@ -29,7 +30,8 @@ const App = () => (
           <Route path="/" element={<MainLayout />}>
             <Route path="/schemes" element={<SchemeDashboard />} />
             <Route path="/schemes/new" element={<SchemeForm />} />
-            <Route path="/schemes/:id" element={<SchemeDetail />} />
+            <Route path="/schemes/edit/:id" element={<SchemeForm isEditing />} />
+            <Route path="/schemes/:id" element={<SchemeDetails />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
