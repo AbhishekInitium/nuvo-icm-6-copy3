@@ -1,295 +1,457 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 
-// Create a schema for form validation
-const formSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/api/client';
+import { cn } from '@/lib/utils';
+import { RuleBuilder, Rule, Field } from '@/components/scheme/RuleBuilder';
+
+// Define schema for form validation
+const schemeFormSchema = z.object({
+  name: z.string().min(3, { message: 'Scheme name must be at least 3 characters' }),
   description: z.string().optional(),
-  startDate: z.date({ required_error: 'Start date is required' }),
-  endDate: z.date({ required_error: 'End date is required' }),
-  quotaAmount: z.coerce.number().positive({ message: 'Quota amount must be positive' }),
-  revenueBase: z.enum(['Orders', 'Invoices', 'Collections']),
-  configName: z.string({ required_error: 'Config is required' }),
+  effectiveStart: z.date({ required_error: 'Start date is required' }),
+  effectiveEnd: z.date({ required_error: 'End date is required' }),
+  quotaAmount: z.coerce.number().min(0, { message: 'Quota amount must be positive' }),
+  revenueBase: z.string({ required_error: 'Revenue base is required' }),
+  configName: z.string({ required_error: 'Config name is required' }),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type SchemeFormValues = z.infer<typeof schemeFormSchema>;
 
-export default function SchemeForm() {
+interface ConfigField {
+  id: string;
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'date';
+}
+
+interface ConfigDetails {
+  adminName: string;
+  qualificationFields: ConfigField[];
+  adjustmentFields: ConfigField[];
+  exclusionFields: ConfigField[];
+}
+
+export function SchemeForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<string | null>(null);
+  const [configDetails, setConfigDetails] = useState<ConfigDetails | null>(null);
   
-  // Mock configs
-  const availableConfigs = [
-    { id: 'conf_1', name: 'Default Sales Config' },
-    { id: 'conf_2', name: 'Premium Agent Config' },
-    { id: 'conf_3', name: 'Enterprise Config' },
-  ];
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      revenueBase: 'Orders',
+  // Rules state
+  const [qualifyingRules, setQualifyingRules] = useState<Rule[]>([]);
+  const [adjustmentRules, setAdjustmentRules] = useState<Rule[]>([]);
+  const [exclusionRules, setExclusionRules] = useState<Rule[]>([]);
+  
+  // Mock client ID
+  const clientId = 'client_XYZ';
+  
+  // Fetch available configs for dropdown
+  const { data: configsData, isLoading: configsLoading } = useQuery({
+    queryKey: ['configs'],
+    queryFn: async () => {
+      const response = await apiClient.get('/admin/configs');
+      return response.data.data;
     },
   });
-
-  const onSubmit = async (values: FormValues) => {
-    try {
-      setIsSubmitting(true);
-      
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For now just log the values that would be submitted
-      console.log('Submitting form with values:', {
-        ...values,
-        clientId: 'client_XYZ', // Mock client ID
-      });
-      
+  
+  // Fetch config details when a config is selected
+  const { data: configDetailsData, isLoading: configDetailsLoading } = useQuery({
+    queryKey: ['config', selectedConfig],
+    queryFn: async () => {
+      if (!selectedConfig) return null;
+      const response = await apiClient.get(`/admin/config/${selectedConfig}`);
+      return response.data.data;
+    },
+    enabled: !!selectedConfig,
+  });
+  
+  // Update config details when data is fetched
+  useEffect(() => {
+    if (configDetailsData) {
+      setConfigDetails(configDetailsData);
+    }
+  }, [configDetailsData]);
+  
+  // Default form values
+  const defaultValues: Partial<SchemeFormValues> = {
+    name: '',
+    description: '',
+    quotaAmount: 0,
+    revenueBase: '',
+  };
+  
+  // Initialize form
+  const form = useForm<SchemeFormValues>({
+    resolver: zodResolver(schemeFormSchema),
+    defaultValues,
+  });
+  
+  // Handle config selection
+  const handleConfigChange = (config: string) => {
+    setSelectedConfig(config);
+    form.setValue('configName', config);
+  };
+  
+  // Create scheme mutation
+  const createSchemeMutation = useMutation({
+    mutationFn: async (data: SchemeFormValues) => {
+      const schemeData = {
+        ...data,
+        clientId,
+        status: 'Draft',
+        qualifyingRules,
+        adjustmentRules,
+        exclusionRules,
+      };
+      const response = await apiClient.post('/manager/schemes', schemeData);
+      return response.data;
+    },
+    onSuccess: () => {
       toast({
         title: 'Success!',
         description: 'Scheme created successfully',
       });
-      
       navigate('/schemes');
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error creating scheme:', error);
       toast({
         title: 'Error',
         description: 'Failed to create scheme. Please try again.',
         variant: 'destructive',
       });
-    } finally {
       setIsSubmitting(false);
-    }
+    },
+  });
+  
+  // Form submission handler
+  const onSubmit = (data: SchemeFormValues) => {
+    setIsSubmitting(true);
+    createSchemeMutation.mutate(data);
   };
-
+  
+  // Handle cancel button
+  const handleCancel = () => {
+    navigate('/schemes');
+  };
+  
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Create New Scheme</h1>
+      
       <Card>
         <CardHeader>
-          <CardTitle>Create New Incentive Scheme</CardTitle>
-          <CardDescription>
-            Set up a new incentive scheme with targets and quotas
-          </CardDescription>
+          <CardTitle>Scheme Details</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Scheme Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Q2 Sales Incentive" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Enter a descriptive name for this incentive scheme
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe the purpose and goals of this scheme"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Start Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid grid-cols-2">
+                  <TabsTrigger value="basic">Basic Information</TabsTrigger>
+                  <TabsTrigger value="rules" disabled={!selectedConfig}>Rules Configuration</TabsTrigger>
+                </TabsList>
                 
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>End Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
+                <TabsContent value="basic" className="space-y-6 pt-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Scheme Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter scheme name" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          A descriptive name for your incentive scheme
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter scheme description" 
+                            className="resize-none" 
+                            {...field} 
                           />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="quotaAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quota Amount</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number" 
-                        placeholder="10000"
-                        {...field}
+                        </FormControl>
+                        <FormDescription>
+                          Optional details about the incentive scheme
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="effectiveStart"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Effective From</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                                className="p-3 pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="effectiveEnd"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Effective To</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                                className="p-3 pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="quotaAmount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quota Amount</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="0"
+                              placeholder="Enter quota amount" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="revenueBase"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Revenue Base</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select revenue base" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Orders">Orders</SelectItem>
+                              <SelectItem value="Invoices">Invoices</SelectItem>
+                              <SelectItem value="Collections">Collections</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="configName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Configuration</FormLabel>
+                        <Select 
+                          onValueChange={(value) => handleConfigChange(value)} 
+                          defaultValue={field.value}
+                          disabled={configsLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select configuration" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {configsLoading ? (
+                              <div className="flex items-center justify-center p-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span className="ml-2">Loading...</span>
+                              </div>
+                            ) : configsData && configsData.length > 0 ? (
+                              configsData.map((config: any) => (
+                                <SelectItem key={config.adminName} value={config.adminName}>
+                                  {config.adminName}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-configs" disabled>
+                                No configurations available
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Select the KPI configuration for this scheme
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="rules" className="space-y-6 pt-4">
+                  {configDetailsLoading ? (
+                    <div className="flex items-center justify-center p-8">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span className="ml-2">Loading configuration details...</span>
+                    </div>
+                  ) : configDetails ? (
+                    <>
+                      <RuleBuilder
+                        title="Qualifying Criteria"
+                        fields={configDetails.qualificationFields || []}
+                        rules={qualifyingRules}
+                        onChange={setQualifyingRules}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      
+                      <RuleBuilder
+                        title="Adjustment Rules"
+                        fields={configDetails.adjustmentFields || []}
+                        rules={adjustmentRules}
+                        onChange={setAdjustmentRules}
+                      />
+                      
+                      <RuleBuilder
+                        title="Exclusion Rules"
+                        fields={configDetails.exclusionFields || []}
+                        rules={exclusionRules}
+                        onChange={setExclusionRules}
+                      />
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Select a configuration to set up rules
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
               
-              <FormField
-                control={form.control}
-                name="revenueBase"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Revenue Base</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select revenue base" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Orders">Orders</SelectItem>
-                        <SelectItem value="Invoices">Invoices</SelectItem>
-                        <SelectItem value="Collections">Collections</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="configName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Configuration</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select configuration" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableConfigs.map(config => (
-                          <SelectItem key={config.id} value={config.id}>
-                            {config.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <CardFooter className="flex justify-between px-0 pt-4">
+              <CardFooter className="flex justify-between px-0 pb-0">
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={() => navigate('/schemes')}
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating...' : 'Create Scheme'}
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Scheme
                 </Button>
               </CardFooter>
             </form>
@@ -299,3 +461,5 @@ export default function SchemeForm() {
     </div>
   );
 }
+
+export default SchemeForm;
