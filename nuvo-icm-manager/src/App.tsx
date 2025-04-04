@@ -5,6 +5,9 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { SchemesList } from '@/pages/schemes/SchemesList';
 import { SchemeDetail } from '@/pages/schemes/SchemeDetail';
 import { CreateScheme } from '@/pages/schemes/CreateScheme';
+import SchemeDashboard from '@/pages/SchemeDashboard';
+import SchemeForm from '@/pages/SchemeForm';
+import { Toaster } from '@/components/ui/toaster';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -23,13 +26,14 @@ function App() {
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Navigate to="/schemes" replace />} />
-            <Route path="/schemes" element={<SchemesList />} />
-            <Route path="/schemes/create" element={<CreateScheme />} />
+            <Route path="/schemes" element={<SchemeDashboard />} />
+            <Route path="/schemes/new" element={<SchemeForm />} />
             <Route path="/schemes/:id" element={<SchemeDetail />} />
             <Route path="*" element={<Navigate to="/schemes" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>
+      <Toaster />
     </QueryClientProvider>
   );
 }
