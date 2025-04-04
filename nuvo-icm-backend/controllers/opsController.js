@@ -1,7 +1,6 @@
 
-const Scheme = require('../models/Scheme');
-const ExecutionLog = require('../models/ExecutionLog');
-const { getClientConfig } = require('../utils/clientLoader');
+const schemeService = require('../services/schemeService');
+const executionLogService = require('../services/executionLogService');
 
 /**
  * @desc    Get all non-draft schemes for a client
@@ -16,18 +15,8 @@ exports.getApprovedSchemes = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Client ID is required' });
     }
 
-    // Validate clientId using the clientLoader
-    try {
-      getClientConfig(clientId);
-    } catch (error) {
-      return res.status(404).json({ success: false, error: error.message });
-    }
-
-    // Find all schemes for this client that are not in DRAFT status
-    const schemes = await Scheme.find({ 
-      clientId, 
-      status: { $ne: 'Draft' } 
-    });
+    // Call the service method
+    const schemes = await schemeService.getApprovedSchemes(clientId);
     
     return res.status(200).json({
       success: true,
@@ -37,9 +26,9 @@ exports.getApprovedSchemes = async (req, res) => {
     
   } catch (error) {
     console.error('Error fetching approved schemes:', error);
-    return res.status(500).json({
+    return res.status(error.message.includes('not found') ? 404 : 500).json({
       success: false,
-      error: 'Server Error'
+      error: error.message || 'Server Error'
     });
   }
 };
@@ -52,49 +41,10 @@ exports.getApprovedSchemes = async (req, res) => {
 exports.approveScheme = async (req, res) => {
   try {
     const { schemeId } = req.params;
-    const { clientId } = req.body;
+    const { clientId, notes } = req.body;
 
-    if (!clientId) {
-      return res.status(400).json({ success: false, error: 'Client ID is required' });
-    }
-
-    // Validate clientId using the clientLoader
-    try {
-      getClientConfig(clientId);
-    } catch (error) {
-      return res.status(404).json({ success: false, error: error.message });
-    }
-
-    // Find the scheme
-    const scheme = await Scheme.findOne({ schemeId, clientId });
-    
-    if (!scheme) {
-      return res.status(404).json({
-        success: false,
-        error: `Scheme with ID ${schemeId} not found for client ${clientId}`
-      });
-    }
-
-    // Check if the scheme is in DRAFT status
-    if (scheme.status !== 'Draft') {
-      return res.status(400).json({
-        success: false,
-        error: `Scheme must be in DRAFT status to be approved. Current status: ${scheme.status}`
-      });
-    }
-
-    // Update the scheme status to APPROVED
-    scheme.status = 'Approved';
-    
-    // Log approval info (in a real implementation, this would come from auth middleware)
-    scheme.approvalInfo = {
-      approvedAt: new Date(),
-      approvedBy: 'ops-user@example.com', // Mock user for now
-      notes: req.body.notes || 'Approved by Operations'
-    };
-    
-    // Save the updated scheme
-    await scheme.save();
+    // Call the service method
+    const scheme = await schemeService.approveScheme(schemeId, clientId, notes);
     
     return res.status(200).json({
       success: true,
@@ -103,9 +53,16 @@ exports.approveScheme = async (req, res) => {
     
   } catch (error) {
     console.error('Error approving scheme:', error);
-    return res.status(500).json({
+    
+    // Determine appropriate status code based on error message
+    let statusCode = 500;
+    if (error.message.includes('not found')) statusCode = 404;
+    if (error.message.includes('must be in DRAFT status')) statusCode = 400;
+    if (error.message.includes('Client ID is required')) statusCode = 400;
+    
+    return res.status(statusCode).json({
       success: false,
-      error: 'Server Error'
+      error: error.message || 'Server Error'
     });
   }
 };
@@ -119,22 +76,8 @@ exports.getProductionRuns = async (req, res) => {
   try {
     const { clientId } = req.query;
 
-    if (!clientId) {
-      return res.status(400).json({ success: false, error: 'Client ID is required' });
-    }
-
-    // Validate clientId using the clientLoader
-    try {
-      getClientConfig(clientId);
-    } catch (error) {
-      return res.status(404).json({ success: false, error: error.message });
-    }
-
-    // Find all production execution logs for this client
-    const productionRuns = await ExecutionLog.find({ 
-      clientId, 
-      mode: 'production' 
-    }).select('runId schemeId executedAt summary postProcessingLog');
+    // Call the service method
+    const productionRuns = await executionLogService.getProductionRuns(clientId);
     
     return res.status(200).json({
       success: true,
@@ -144,9 +87,10 @@ exports.getProductionRuns = async (req, res) => {
     
   } catch (error) {
     console.error('Error fetching production runs:', error);
-    return res.status(500).json({
+    
+    return res.status(error.message.includes('not found') ? 404 : 500).json({
       success: false,
-      error: 'Server Error'
+      error: error.message || 'Server Error'
     });
   }
 };
@@ -161,58 +105,20 @@ exports.getProductionRunDetail = async (req, res) => {
     const { runId } = req.params;
     const { clientId } = req.query;
 
-    if (!clientId) {
-      return res.status(400).json({ success: false, error: 'Client ID is required' });
-    }
-
-    // Validate clientId using the clientLoader
-    try {
-      getClientConfig(clientId);
-    } catch (error) {
-      return res.status(404).json({ success: false, error: error.message });
-    }
-
-    // Find the production run
-    const productionRun = await ExecutionLog.findOne({ 
-      runId, 
-      clientId,
-      mode: 'production'
-    });
-    
-    if (!productionRun) {
-      return res.status(404).json({
-        success: false,
-        error: `Production run with ID ${runId} not found for client ${clientId}`
-      });
-    }
-    
-    // Get the associated scheme data
-    const scheme = await Scheme.findOne({ 
-      schemeId: productionRun.schemeId, 
-      clientId 
-    });
+    // Call the service method
+    const result = await executionLogService.getProductionRunDetail(runId, clientId);
     
     return res.status(200).json({
       success: true,
-      data: {
-        executionLog: productionRun,
-        schemeInfo: scheme ? {
-          name: scheme.name,
-          description: scheme.description,
-          effectiveStart: scheme.effectiveStart,
-          effectiveEnd: scheme.effectiveEnd,
-          quotaAmount: scheme.quotaAmount,
-          revenueBase: scheme.revenueBase,
-          configName: scheme.configName
-        } : null
-      }
+      data: result
     });
     
   } catch (error) {
     console.error('Error fetching production run details:', error);
-    return res.status(500).json({
+    
+    return res.status(error.message.includes('not found') ? 404 : 500).json({
       success: false,
-      error: 'Server Error'
+      error: error.message || 'Server Error'
     });
   }
 };
