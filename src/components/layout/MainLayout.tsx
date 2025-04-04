@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   SidebarProvider,
@@ -132,20 +132,25 @@ export function MainLayout() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton asChild>
-                    <a 
-                      href={item.path} 
+                    <Link 
+                      to={item.path} 
                       style={{ 
                         textDecoration: 'none', 
                         color: 'inherit',
                         backgroundColor: isActive(item.path) ? 'rgba(0, 76, 151, 0.1)' : 'transparent',
                         fontWeight: isActive(item.path) ? 'bold' : 'normal',
                         borderLeft: isActive(item.path) ? '3px solid #004c97' : '3px solid transparent',
-                        paddingLeft: isActive(item.path) ? '13px' : '16px'
+                        paddingLeft: isActive(item.path) ? '13px' : '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        width: '100%',
+                        padding: '8px 16px'
                       }}
                     >
                       <item.icon />
                       <span>{item.label}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
