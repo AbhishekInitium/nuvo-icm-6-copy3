@@ -8,7 +8,7 @@ import { SchemeDateRange } from '@/components/scheme/SchemeDateRange';
 import { SchemeMetrics } from '@/components/scheme/SchemeMetrics';
 import { SchemeConfig } from '@/components/scheme/SchemeConfig';
 import { SchemeFormActions } from '@/components/scheme/SchemeFormActions';
-import { RuleBuilder } from '@/components/scheme/RuleBuilder';
+import { RuleBuilder, Field } from '@/components/scheme/RuleBuilder';
 import { CreditSplitTable } from '@/components/scheme/CreditSplitTable';
 import { PayoutTierBuilder } from '@/components/scheme/PayoutTierBuilder';
 import { useSchemeForm } from '@/hooks/useSchemeForm';
@@ -24,8 +24,8 @@ export function SchemeForm({ isEditing = false }) {
   const [exclusionRules, setExclusionRules] = useState([]);
   const [isPercentageRate, setIsPercentageRate] = useState(true);
   
-  // Sample fields for rule builders
-  const sampleFields = [
+  // Sample fields for rule builders with correct type literals
+  const sampleFields: Field[] = [
     { id: "product", name: "Product", type: "string" },
     { id: "productCategory", name: "Product Category", type: "string" },
     { id: "orderValue", name: "Order Value", type: "number" },
