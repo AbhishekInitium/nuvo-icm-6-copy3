@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Play, FileText, BarChart } from 'lucide-react';
@@ -71,7 +72,8 @@ export function SchemeList({
           ) : (
             schemes.map((scheme) => {
               // Calculate isRunnable based on scheme status and running state
-              const isRunnable = scheme.status === 'Approved' && scheme.status !== 'ProdRun' && !runningScheme;
+              const status: string = scheme.status;
+              const isRunnable = status === 'Approved' && !runningScheme;
 
               return (
                 <TableRow key={scheme.schemeId}>
