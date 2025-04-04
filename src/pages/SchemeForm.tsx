@@ -39,6 +39,9 @@ import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/api/client';
 import { cn } from '@/lib/utils';
 import { RuleBuilder, Rule, Field } from '@/components/scheme/RuleBuilder';
+import { CreditRuleBuilder, CreditRule } from '@/components/scheme/CreditRuleBuilder';
+import { CreditSplitTable, CreditSplit } from '@/components/scheme/CreditSplitTable';
+import { PayoutTierBuilder, PayoutTier } from '@/components/scheme/PayoutTierBuilder';
 
 // Define schema for form validation
 const schemeFormSchema = z.object({
@@ -64,6 +67,7 @@ interface ConfigDetails {
   qualificationFields: ConfigField[];
   adjustmentFields: ConfigField[];
   exclusionFields: ConfigField[];
+  baseFields?: ConfigField[]; // Added for credit rules
 }
 
 export function SchemeForm() {
@@ -77,6 +81,12 @@ export function SchemeForm() {
   const [qualifyingRules, setQualifyingRules] = useState<Rule[]>([]);
   const [adjustmentRules, setAdjustmentRules] = useState<Rule[]>([]);
   const [exclusionRules, setExclusionRules] = useState<Rule[]>([]);
+  
+  // New state for credit and payout
+  const [creditRules, setCreditRules] = useState<CreditRule[]>([]);
+  const [creditSplits, setCreditSplits] = useState<CreditSplit[]>([]);
+  const [payoutTiers, setPayoutTiers] = useState<PayoutTier[]>([]);
+  const [isPercentageRate, setIsPercentageRate] = useState(true);
   
   // Mock client ID
   const clientId = 'client_XYZ';
@@ -96,7 +106,15 @@ export function SchemeForm() {
     queryFn: async () => {
       if (!selectedConfig) return null;
       const response = await apiClient.get(`/admin/config/${selectedConfig}`);
-      return response.data.data;
+      // Add baseFields for credit rules
+      const data = response.data.data;
+      data.baseFields = [
+        { id: 'SalesRep', name: 'Sales Representative', type: 'string' },
+        { id: 'SalesOrg', name: 'Sales Organization', type: 'string' },
+        { id: 'Territory', name: 'Territory', type: 'string' },
+        { id: 'Department', name: 'Department', type: 'string' },
+      ];
+      return data;
     },
     enabled: !!selectedConfig,
   });
@@ -138,6 +156,12 @@ export function SchemeForm() {
         qualifyingRules,
         adjustmentRules,
         exclusionRules,
+        creditRules,
+        creditSplits,
+        payoutStructure: {
+          isPercentageRate,
+          tiers: payoutTiers
+        }
       };
       const response = await apiClient.post('/manager/schemes', schemeData);
       return response.data;
@@ -183,12 +207,14 @@ export function SchemeForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid grid-cols-2">
+                <TabsList className="grid grid-cols-3">
                   <TabsTrigger value="basic">Basic Information</TabsTrigger>
                   <TabsTrigger value="rules" disabled={!selectedConfig}>Rules Configuration</TabsTrigger>
+                  <TabsTrigger value="payout" disabled={!selectedConfig}>Payout Rules</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="basic" className="space-y-6 pt-4">
+                  {/* Basic Information Tab Content */}
                   <FormField
                     control={form.control}
                     name="name"
@@ -401,6 +427,7 @@ export function SchemeForm() {
                 </TabsContent>
                 
                 <TabsContent value="rules" className="space-y-6 pt-4">
+                  {/* Rules Configuration Tab Content */}
                   {configDetailsLoading ? (
                     <div className="flex items-center justify-center p-8">
                       <Loader2 className="h-6 w-6 animate-spin" />
@@ -432,6 +459,40 @@ export function SchemeForm() {
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       Select a configuration to set up rules
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="payout" className="space-y-6 pt-4">
+                  {/* Payout Rules Tab Content */}
+                  {configDetailsLoading ? (
+                    <div className="flex items-center justify-center p-8">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span className="ml-2">Loading configuration details...</span>
+                    </div>
+                  ) : configDetails ? (
+                    <>
+                      <CreditRuleBuilder
+                        fields={configDetails.baseFields || []}
+                        rules={creditRules}
+                        onChange={setCreditRules}
+                      />
+                      
+                      <CreditSplitTable
+                        creditSplits={creditSplits}
+                        onChange={setCreditSplits}
+                      />
+                      
+                      <PayoutTierBuilder
+                        tiers={payoutTiers}
+                        isPercentageRate={isPercentageRate}
+                        onChange={setPayoutTiers}
+                        onToggleRateType={setIsPercentageRate}
+                      />
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Select a configuration to set up payout rules
                     </div>
                   )}
                 </TabsContent>
