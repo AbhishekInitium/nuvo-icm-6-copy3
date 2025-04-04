@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +13,7 @@ import {
   SidebarInset,
   SidebarTrigger
 } from '@/components/ui/sidebar';
-import { ChevronRight, BarChart3, ListTodo, Calculator, Settings, LogOut, Users, User, Database } from 'lucide-react';
+import { ChevronRight, BarChart3, ListTodo, Calculator, Settings, LogOut, Users, User, Database, Play } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
@@ -67,6 +66,7 @@ export function MainLayout() {
       items.push(
         { icon: BarChart3, label: 'Dashboard', path: '/schemes' },
         { icon: ListTodo, label: 'Schemes', path: '/schemes' },
+        { icon: Play, label: 'Scheme Run', path: '/scheme-run' },
         { icon: Calculator, label: 'Simulations', path: '/simulations' }
       );
     } else if (user?.role === 'Admin') {
@@ -80,6 +80,12 @@ export function MainLayout() {
       items.push(
         { icon: BarChart3, label: 'Dashboard', path: '/agent-dashboard' },
         { icon: User, label: 'My Performance', path: '/agent-dashboard' }
+      );
+    } else if (user?.role === 'Finance') {
+      items.push(
+        { icon: BarChart3, label: 'Dashboard', path: '/schemes' },
+        { icon: Play, label: 'Scheme Run', path: '/scheme-run' },
+        { icon: Calculator, label: 'Reports', path: '/reports' }
       );
     }
     

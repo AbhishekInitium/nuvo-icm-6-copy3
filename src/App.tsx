@@ -9,6 +9,7 @@ import { SchemeDetails } from "./pages/schemes/SchemeDetails";
 import { SchemesList } from "./pages/schemes/SchemesList";
 import SchemeDashboard from "./pages/SchemeDashboard";
 import SchemeForm from "./pages/SchemeForm";
+import SchemeRun from "./pages/SchemeRun";
 import KpiConfigurator from "./pages/KpiConfigurator";
 import KpiConfigurations from "./pages/KpiConfigurations";
 import AgentDashboard from "./pages/AgentDashboard";
@@ -88,6 +89,16 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={["Manager"]}>
                     <SchemeDetails />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Scheme Run Route - available to Managers and Finance roles */}
+              <Route
+                path="/scheme-run"
+                element={
+                  <ProtectedRoute allowedRoles={["Manager", "Finance"]}>
+                    <SchemeRun />
                   </ProtectedRoute>
                 }
               />
