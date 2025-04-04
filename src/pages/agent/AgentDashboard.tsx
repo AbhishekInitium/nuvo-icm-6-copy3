@@ -141,7 +141,7 @@ export default function AgentDashboard() {
                 <div>
                   <div className={styles.schemeDetail}>
                     <span className={styles.detailLabel}>Period:</span>
-                    <span>{new Date(scheme.startDate).toLocaleDateString()} - {new Date(scheme.endDate).toLocaleDateString()}</span>
+                    <span>{scheme.effectiveStart ? new Date(scheme.effectiveStart).toLocaleDateString() : 'N/A'} - {scheme.effectiveEnd ? new Date(scheme.effectiveEnd).toLocaleDateString() : 'N/A'}</span>
                   </div>
                   <div className={styles.schemeDetail}>
                     <span className={styles.detailLabel}>Executed:</span>
@@ -151,7 +151,7 @@ export default function AgentDashboard() {
                     <div className={styles.earningSummary}>
                       <div className={styles.detailLabel}>Total Earnings</div>
                       <div className={styles.earningAmount}>
-                        ${results[scheme.schemeId]?.totalEarnings.toFixed(2)}
+                        ${results[scheme.schemeId]?.commission.toFixed(2)}
                       </div>
                     </div>
                   )}
@@ -168,26 +168,16 @@ export default function AgentDashboard() {
               <table className={styles.detailsTable}>
                 <thead>
                   <tr>
-                    <th>Metric</th>
-                    <th>Target</th>
-                    <th>Achieved</th>
-                    <th>Achievement %</th>
-                    <th>Payout</th>
+                    <th>Qualification Status</th>
+                    <th>Commission</th>
+                    <th>Total Sales</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {results[selectedScheme]?.metrics.map((metric, index) => (
-                    <tr key={index}>
-                      <td>{metric.name}</td>
-                      <td>{metric.target}</td>
-                      <td>{metric.actual}</td>
-                      <td>{(metric.achievement * 100).toFixed(1)}%</td>
-                      <td>${metric.payout.toFixed(2)}</td>
-                    </tr>
-                  ))}
                   <tr>
-                    <td colSpan={4} style={{ textAlign: 'right', fontWeight: 'bold' }}>Total</td>
-                    <td style={{ fontWeight: 'bold' }}>${results[selectedScheme]?.totalEarnings.toFixed(2)}</td>
+                    <td>{results[selectedScheme]?.qualified ? 'Qualified' : 'Not Qualified'}</td>
+                    <td>${results[selectedScheme]?.commission.toFixed(2)}</td>
+                    <td>{results[selectedScheme]?.totalSales ? `$${results[selectedScheme]?.totalSales.toFixed(2)}` : 'N/A'}</td>
                   </tr>
                 </tbody>
               </table>
