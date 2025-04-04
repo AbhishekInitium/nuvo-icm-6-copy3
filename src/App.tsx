@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,7 +11,7 @@ import SchemeForm from "./pages/SchemeForm";
 import SchemeRun from "./pages/SchemeRun";
 import KpiConfigurator from "./pages/KpiConfigurator";
 import KpiConfigurations from "./pages/KpiConfigurations";
-import AgentDashboard from "./pages/AgentDashboard";
+import AgentDashboard from "./pages/agent/AgentDashboard";
 import Settings from "./pages/Settings";
 import SystemConfig from "./pages/SystemConfig";
 import Login from "./pages/Login";
