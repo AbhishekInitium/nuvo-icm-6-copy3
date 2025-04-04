@@ -110,7 +110,11 @@ const ExecutionLogSchema = new mongoose.Schema(
           }
         ]
       }
-    ]
+    ],
+    postProcessingLog: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    }
   },
   {
     timestamps: true

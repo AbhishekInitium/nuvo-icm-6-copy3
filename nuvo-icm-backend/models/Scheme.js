@@ -64,6 +64,10 @@ const SchemeSchema = new mongoose.Schema(
     clientId: {
       type: String,
       required: [true, 'Client ID is required']
+    },
+    postProcessor: {
+      type: String,
+      default: null
     }
   },
   {

@@ -2,6 +2,8 @@
 const Scheme = require('../models/Scheme');
 const ExecutionLog = require('../models/ExecutionLog');
 const { getClientConfig } = require('../utils/clientLoader');
+const path = require('path');
+const fs = require('fs');
 
 /**
  * @desc    Run a scheme in simulation or production mode
@@ -53,10 +55,10 @@ exports.runScheme = async (req, res) => {
     // In a real implementation, this would fetch data from SAP or other sources
     // based on the scheme's configuration
     const dummyAgents = generateDummyAgents(10);
-    const executionResults = executeDummyLogic(dummyAgents, scheme);
+    let executionResults = executeDummyLogic(dummyAgents, scheme);
     
-    // Create execution log
-    const executionLog = await ExecutionLog.create({
+    // Create initial execution log object
+    let executionLog = {
       schemeId: scheme.schemeId,
       mode,
       clientId,
@@ -66,8 +68,63 @@ exports.runScheme = async (req, res) => {
         failed: executionResults.filter(agent => !agent.qualified).length,
         totalCommission: executionResults.reduce((total, agent) => total + agent.commission, 0)
       },
-      agents: executionResults
-    });
+      agents: executionResults,
+      postProcessingLog: null
+    };
+
+    // Check if the scheme has a post-processor plugin
+    if (scheme.postProcessor) {
+      try {
+        // Construct the absolute path to the plugin
+        const pluginPath = path.join(__dirname, '..', 'custom', scheme.postProcessor);
+        
+        // Check if the plugin file exists
+        if (fs.existsSync(pluginPath)) {
+          // Dynamically load the plugin
+          const plugin = require(pluginPath);
+          
+          // Create a context object for the plugin
+          const context = {
+            schemeId: scheme.schemeId,
+            mode,
+            clientId,
+            timestamp: new Date(),
+            scheme: scheme.toObject()
+          };
+          
+          // Execute the post-processor plugin
+          const postProcessResult = await plugin(executionLog, context);
+          
+          // Update the execution log with the post-processed result
+          executionLog = postProcessResult;
+          
+          // Log success
+          executionLog.postProcessingLog = {
+            status: 'success',
+            message: `Post-processing completed successfully with plugin: ${scheme.postProcessor}`,
+            timestamp: new Date()
+          };
+        } else {
+          // Log plugin file not found error
+          executionLog.postProcessingLog = {
+            status: 'error',
+            message: `Post-processor plugin file not found: ${scheme.postProcessor}`,
+            timestamp: new Date()
+          };
+        }
+      } catch (error) {
+        // Log post-processing error
+        executionLog.postProcessingLog = {
+          status: 'error',
+          message: `Post-processing error: ${error.message}`,
+          stack: error.stack,
+          timestamp: new Date()
+        };
+      }
+    }
+
+    // Save the execution log
+    const savedLog = await ExecutionLog.create(executionLog);
 
     // If production mode, update scheme status
     if (mode === 'production') {
@@ -78,9 +135,10 @@ exports.runScheme = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: {
-        runId: executionLog.runId,
-        summary: executionLog.summary,
-        mode: executionLog.mode
+        runId: savedLog.runId,
+        summary: savedLog.summary,
+        mode: savedLog.mode,
+        postProcessingStatus: savedLog.postProcessingLog ? savedLog.postProcessingLog.status : null
       }
     });
 
@@ -115,7 +173,7 @@ exports.getAllExecutionLogs = async (req, res) => {
 
     // Get execution logs
     const logs = await ExecutionLog.find({ clientId })
-      .select('runId schemeId mode executedAt summary')
+      .select('runId schemeId mode executedAt summary postProcessingLog')
       .sort({ executedAt: -1 });
     
     return res.status(200).json({
