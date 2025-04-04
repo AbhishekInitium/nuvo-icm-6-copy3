@@ -4,12 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { MainLayout } from "nuvo-icm-manager/src/components/layout/MainLayout";
-import { SchemesList } from "nuvo-icm-manager/src/pages/schemes/SchemesList";
-import { SchemeDetail } from "nuvo-icm-manager/src/pages/schemes/SchemeDetail";
-import { CreateScheme } from "nuvo-icm-manager/src/pages/schemes/CreateScheme";
-import SchemeDashboard from "nuvo-icm-manager/src/pages/SchemeDashboard";
-import SchemeForm from "nuvo-icm-manager/src/pages/SchemeForm";
+import { MainLayout } from "./components/layout/MainLayout";
+import { SchemeDetail } from "./pages/schemes/SchemeDetail";
+import { SchemesList } from "./pages/schemes/SchemesList";
+import SchemeDashboard from "./pages/SchemeDashboard";
+import SchemeForm from "./pages/SchemeForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
