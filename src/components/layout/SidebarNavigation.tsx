@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { 
   BarChart3, ListTodo, Calculator, Settings, 
-  LogOut, Users, User, Database, Play 
+  LogOut, Users, User, Database, Play, FileText 
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -36,7 +36,8 @@ export function SidebarNavigation() {
         { icon: BarChart3, label: 'Dashboard', path: '/schemes' },
         { icon: ListTodo, label: 'Schemes', path: '/schemes' },
         { icon: Play, label: 'Scheme Run', path: '/scheme-run' },
-        { icon: Calculator, label: 'Simulations', path: '/simulations' }
+        { icon: Calculator, label: 'Simulations', path: '/simulations' },
+        { icon: FileText, label: 'Finance & Ops', path: '/finance-ops' }
       );
     } else if (user?.role === 'Admin') {
       items.push(
@@ -52,7 +53,8 @@ export function SidebarNavigation() {
       );
     } else if (user?.role === 'Finance') {
       items.push(
-        { icon: BarChart3, label: 'Dashboard', path: '/schemes' },
+        { icon: BarChart3, label: 'Dashboard', path: '/finance-ops' },
+        { icon: FileText, label: 'Finance & Ops', path: '/finance-ops' },
         { icon: Play, label: 'Scheme Run', path: '/scheme-run' },
         { icon: Calculator, label: 'Reports', path: '/reports' }
       );

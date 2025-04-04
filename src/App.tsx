@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,7 @@ import SchemeRun from "./pages/SchemeRun";
 import KpiConfigurator from "./pages/KpiConfigurator";
 import KpiConfigurations from "./pages/KpiConfigurations";
 import AgentDashboard from "./pages/agent/AgentDashboard";
+import OpsDashboard from "./pages/OpsDashboard";
 import Settings from "./pages/Settings";
 import SystemConfig from "./pages/SystemConfig";
 import Login from "./pages/Login";
@@ -34,6 +36,7 @@ const HomeRedirect = () => {
   
   if (user?.role === "Admin") return <Navigate to="/kpi-configurator" replace />;
   if (user?.role === "Agent") return <Navigate to="/agent-dashboard" replace />;
+  if (user?.role === "Finance") return <Navigate to="/finance-ops" replace />;
   return <Navigate to="/schemes" replace />;
 };
 
@@ -134,6 +137,16 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={["Agent"]}>
                     <AgentDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Finance & Ops Routes */}
+              <Route
+                path="/finance-ops"
+                element={
+                  <ProtectedRoute allowedRoles={["Finance", "Manager"]}>
+                    <OpsDashboard />
                   </ProtectedRoute>
                 }
               />
