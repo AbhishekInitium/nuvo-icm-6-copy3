@@ -12,6 +12,8 @@ interface LogsModalProps {
   executionLogs: ExecutionLog[];
   selectedLog: ExecutionLog | null;
   onViewLogDetails: (log: ExecutionLog) => void;
+  onDownloadJson: (log: ExecutionLog) => void;
+  onCopyLog: (log: ExecutionLog) => void;
 }
 
 export function LogsModal({
@@ -20,7 +22,9 @@ export function LogsModal({
   selectedScheme,
   executionLogs,
   selectedLog,
-  onViewLogDetails
+  onViewLogDetails,
+  onDownloadJson,
+  onCopyLog
 }: LogsModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,13 +46,21 @@ export function LogsModal({
             <div className="mt-4">
               <ExecutionLogList 
                 executionLogs={executionLogs} 
-                onViewDetails={onViewLogDetails} 
+                onViewDetails={onViewLogDetails}
+                onDownloadJson={onDownloadJson}
+                onCopyLog={onCopyLog}
               />
             </div>
           </TabsContent>
           
           <TabsContent value="details">
-            {selectedLog && <LogDetailsView selectedLog={selectedLog} />}
+            {selectedLog && (
+              <LogDetailsView 
+                selectedLog={selectedLog} 
+                onDownloadJson={onDownloadJson}
+                onCopyLog={onCopyLog}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </DialogContent>

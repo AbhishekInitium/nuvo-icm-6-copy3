@@ -99,14 +99,12 @@ export default function SchemeRun() {
   const handleViewLogs = async (scheme: Scheme) => {
     try {
       setSelectedScheme(scheme);
-      const response = await apiClient.get(`/execute/logs?clientId=${user?.clientId}`);
+      const response = await apiClient.get(`/execute/logs?clientId=${user?.clientId}&schemeId=${scheme.schemeId}`);
       
       if (response.data.success) {
-        const schemeLogs = response.data.data.filter(
-          (log: ExecutionLog) => log.schemeId === scheme.schemeId
-        );
-        setExecutionLogs(schemeLogs);
+        setExecutionLogs(response.data.data || []);
         setLogsModalOpen(true);
+        setSelectedLog(null); // Reset selected log when viewing new logs
       } else {
         throw new Error(response.data.error || 'Failed to fetch execution logs');
       }
@@ -134,6 +132,59 @@ export default function SchemeRun() {
       toast({
         title: 'Failed to load log details',
         description: 'There was an error loading the log details. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownloadJson = (log: ExecutionLog) => {
+    try {
+      // Create a blob with the JSON data
+      const jsonString = JSON.stringify(log, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      
+      // Create a URL for the blob
+      const url = URL.createObjectURL(blob);
+      
+      // Create a temporary anchor element and trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `execution-log-${log.runId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'Download Started',
+        description: 'The execution log is being downloaded as a JSON file.',
+      });
+    } catch (error) {
+      console.error('Error downloading JSON:', error);
+      toast({
+        title: 'Download Failed',
+        description: 'Failed to download the execution log. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCopyLog = (log: ExecutionLog) => {
+    try {
+      const jsonString = JSON.stringify(log, null, 2);
+      navigator.clipboard.writeText(jsonString);
+      
+      toast({
+        title: 'Copied to Clipboard',
+        description: 'The execution log has been copied to your clipboard.',
+      });
+    } catch (error) {
+      console.error('Error copying log:', error);
+      toast({
+        title: 'Copy Failed',
+        description: 'Failed to copy the execution log. Please try again.',
         variant: 'destructive',
       });
     }
@@ -217,6 +268,8 @@ export default function SchemeRun() {
         executionLogs={executionLogs}
         selectedLog={selectedLog}
         onViewLogDetails={handleViewLogDetails}
+        onDownloadJson={handleDownloadJson}
+        onCopyLog={handleCopyLog}
       />
     </div>
   );

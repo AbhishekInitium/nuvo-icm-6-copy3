@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Play, FileText, BarChart } from 'lucide-react';
@@ -58,7 +57,6 @@ export function SchemeList({
             <TableHead>Status</TableHead>
             <TableHead>Created Date</TableHead>
             <TableHead>Effective Period</TableHead>
-            {/* Optional: Last Run Summary */}
             <TableHead>Last Run</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
