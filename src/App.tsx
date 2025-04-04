@@ -13,6 +13,7 @@ import KpiConfigurator from "./pages/KpiConfigurator";
 import KpiConfigurations from "./pages/KpiConfigurations";
 import AgentDashboard from "./pages/AgentDashboard";
 import Settings from "./pages/Settings";
+import SystemConfig from "./pages/SystemConfig";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -105,6 +106,14 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={["Admin"]}>
                     <KpiConfigurations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/system-config"
+                element={
+                  <ProtectedRoute allowedRoles={["Admin"]}>
+                    <SystemConfig />
                   </ProtectedRoute>
                 }
               />

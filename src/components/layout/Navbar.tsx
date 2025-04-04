@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, User, Menu } from 'lucide-react';
+import { LogOut, User, Menu, Settings } from 'lucide-react';
 
 // Mock client data lookup
 const mockClients = {
@@ -80,6 +80,9 @@ export function Navbar() {
                   <Link to="/schemes/new" style={{ textDecoration: 'none' }}>
                     <Button variant="ghost">Create Scheme</Button>
                   </Link>
+                  <Link to="/simulations" style={{ textDecoration: 'none' }}>
+                    <Button variant="ghost">Simulations</Button>
+                  </Link>
                 </>
               )}
               {user.role === "Admin" && (
@@ -90,6 +93,9 @@ export function Navbar() {
                   <Link to="/kpi-configurations" style={{ textDecoration: 'none' }}>
                     <Button variant="ghost">KPI Configurations</Button>
                   </Link>
+                  <Link to="/system-config" style={{ textDecoration: 'none' }}>
+                    <Button variant="ghost">System Integration</Button>
+                  </Link>
                 </>
               )}
               {user.role === "Agent" && (
@@ -97,6 +103,12 @@ export function Navbar() {
                   <Button variant="ghost">Dashboard</Button>
                 </Link>
               )}
+              <Link to="/settings" style={{ textDecoration: 'none' }}>
+                <Button variant="ghost">
+                  <Settings size={16} style={{ marginRight: '4px' }} />
+                  Settings
+                </Button>
+              </Link>
             </div>
           )}
         </div>
