@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   SidebarProvider,
@@ -14,7 +14,7 @@ import {
   SidebarInset,
   SidebarTrigger
 } from '@/components/ui/sidebar';
-import { ChevronRight, BarChart3, ListTodo, Calculator, Settings, LogOut, Users, User } from 'lucide-react';
+import { ChevronRight, BarChart3, ListTodo, Calculator, Settings, LogOut, Users, User, Database } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
@@ -31,6 +31,7 @@ export function MainLayout() {
   const { user, logout } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const clientName = user?.clientId ? (mockClients[user.clientId] || user.clientId) : 'Unknown Client';
+  const location = useLocation();
   
   // Handle responsive layout
   useEffect(() => {
@@ -53,6 +54,11 @@ export function MainLayout() {
       .substring(0, 2);
   };
 
+  // Check if a route is active
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
   // Get navigation items based on user role
   const getNavigationItems = () => {
     const items = [];
@@ -67,7 +73,8 @@ export function MainLayout() {
       items.push(
         { icon: BarChart3, label: 'Dashboard', path: '/kpi-configurator' },
         { icon: ListTodo, label: 'Configurator', path: '/kpi-configurator' },
-        { icon: Users, label: 'KPI Configs', path: '/kpi-configurations' }
+        { icon: Users, label: 'KPI Configs', path: '/kpi-configurations' },
+        { icon: Database, label: 'System Config', path: '/system-config' }
       );
     } else if (user?.role === 'Agent') {
       items.push(
@@ -125,7 +132,17 @@ export function MainLayout() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton asChild>
-                    <a href={item.path} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <a 
+                      href={item.path} 
+                      style={{ 
+                        textDecoration: 'none', 
+                        color: 'inherit',
+                        backgroundColor: isActive(item.path) ? 'rgba(0, 76, 151, 0.1)' : 'transparent',
+                        fontWeight: isActive(item.path) ? 'bold' : 'normal',
+                        borderLeft: isActive(item.path) ? '3px solid #004c97' : '3px solid transparent',
+                        paddingLeft: isActive(item.path) ? '13px' : '16px'
+                      }}
+                    >
                       <item.icon />
                       <span>{item.label}</span>
                     </a>
