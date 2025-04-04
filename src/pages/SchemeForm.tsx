@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -6,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Play } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -42,8 +41,8 @@ import { RuleBuilder, Rule, Field } from '@/components/scheme/RuleBuilder';
 import { CreditRuleBuilder, CreditRule } from '@/components/scheme/CreditRuleBuilder';
 import { CreditSplitTable, CreditSplit } from '@/components/scheme/CreditSplitTable';
 import { PayoutTierBuilder, PayoutTier } from '@/components/scheme/PayoutTierBuilder';
+import { SchemeSimulationModal } from '@/components/scheme/SchemeSimulationModal';
 
-// Define schema for form validation
 const schemeFormSchema = z.object({
   name: z.string().min(3, { message: 'Scheme name must be at least 3 characters' }),
   description: z.string().optional(),
@@ -76,22 +75,19 @@ export function SchemeForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<string | null>(null);
   const [configDetails, setConfigDetails] = useState<ConfigDetails | null>(null);
+  const [simulationModalOpen, setSimulationModalOpen] = useState(false);
   
-  // Rules state
   const [qualifyingRules, setQualifyingRules] = useState<Rule[]>([]);
   const [adjustmentRules, setAdjustmentRules] = useState<Rule[]>([]);
   const [exclusionRules, setExclusionRules] = useState<Rule[]>([]);
   
-  // New state for credit and payout
   const [creditRules, setCreditRules] = useState<CreditRule[]>([]);
   const [creditSplits, setCreditSplits] = useState<CreditSplit[]>([]);
   const [payoutTiers, setPayoutTiers] = useState<PayoutTier[]>([]);
   const [isPercentageRate, setIsPercentageRate] = useState(true);
   
-  // Mock client ID
   const clientId = 'client_XYZ';
   
-  // Fetch available configs for dropdown
   const { data: configsData, isLoading: configsLoading } = useQuery({
     queryKey: ['configs'],
     queryFn: async () => {
@@ -100,13 +96,11 @@ export function SchemeForm() {
     },
   });
   
-  // Fetch config details when a config is selected
   const { data: configDetailsData, isLoading: configDetailsLoading } = useQuery({
     queryKey: ['config', selectedConfig],
     queryFn: async () => {
       if (!selectedConfig) return null;
       const response = await apiClient.get(`/admin/config/${selectedConfig}`);
-      // Add baseFields for credit rules
       const data = response.data.data;
       data.baseFields = [
         { id: 'SalesRep', name: 'Sales Representative', type: 'string' },
@@ -119,14 +113,12 @@ export function SchemeForm() {
     enabled: !!selectedConfig,
   });
   
-  // Update config details when data is fetched
   useEffect(() => {
     if (configDetailsData) {
       setConfigDetails(configDetailsData);
     }
   }, [configDetailsData]);
   
-  // Default form values
   const defaultValues: Partial<SchemeFormValues> = {
     name: '',
     description: '',
@@ -134,19 +126,16 @@ export function SchemeForm() {
     revenueBase: '',
   };
   
-  // Initialize form
   const form = useForm<SchemeFormValues>({
     resolver: zodResolver(schemeFormSchema),
     defaultValues,
   });
   
-  // Handle config selection
   const handleConfigChange = (config: string) => {
     setSelectedConfig(config);
     form.setValue('configName', config);
   };
   
-  // Create scheme mutation
   const createSchemeMutation = useMutation({
     mutationFn: async (data: SchemeFormValues) => {
       const schemeData = {
@@ -184,15 +173,31 @@ export function SchemeForm() {
     },
   });
   
-  // Form submission handler
   const onSubmit = (data: SchemeFormValues) => {
     setIsSubmitting(true);
     createSchemeMutation.mutate(data);
   };
   
-  // Handle cancel button
   const handleCancel = () => {
     navigate('/schemes');
+  };
+
+  const prepareSimulationData = () => {
+    const formValues = form.getValues();
+    return {
+      ...formValues,
+      clientId,
+      status: 'Draft',
+      qualifyingRules,
+      adjustmentRules,
+      exclusionRules,
+      creditRules,
+      creditSplits,
+      payoutStructure: {
+        isPercentageRate,
+        tiers: payoutTiers
+      }
+    };
   };
   
   return (
@@ -214,7 +219,6 @@ export function SchemeForm() {
                 </TabsList>
                 
                 <TabsContent value="basic" className="space-y-6 pt-4">
-                  {/* Basic Information Tab Content */}
                   <FormField
                     control={form.control}
                     name="name"
@@ -427,7 +431,6 @@ export function SchemeForm() {
                 </TabsContent>
                 
                 <TabsContent value="rules" className="space-y-6 pt-4">
-                  {/* Rules Configuration Tab Content */}
                   {configDetailsLoading ? (
                     <div className="flex items-center justify-center p-8">
                       <Loader2 className="h-6 w-6 animate-spin" />
@@ -464,7 +467,6 @@ export function SchemeForm() {
                 </TabsContent>
                 
                 <TabsContent value="payout" className="space-y-6 pt-4">
-                  {/* Payout Rules Tab Content */}
                   {configDetailsLoading ? (
                     <div className="flex items-center justify-center p-8">
                       <Loader2 className="h-6 w-6 animate-spin" />
@@ -507,18 +509,39 @@ export function SchemeForm() {
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Scheme
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    disabled={isSubmitting || !selectedConfig}
+                    onClick={() => setSimulationModalOpen(true)}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Simulate
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Create Scheme
+                  </Button>
+                </div>
               </CardFooter>
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      <SchemeSimulationModal 
+        isOpen={simulationModalOpen}
+        onClose={() => setSimulationModalOpen(false)}
+        schemeData={prepareSimulationData()}
+        onSuccess={() => {
+          setSimulationModalOpen(false);
+          form.handleSubmit(onSubmit)();
+        }}
+      />
     </div>
   );
 }

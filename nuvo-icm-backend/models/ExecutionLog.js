@@ -2,8 +2,7 @@
 const mongoose = require('mongoose');
 
 /**
- * Schema for Execution Logs in the NUVO ICM system
- * Stores results of scheme executions in simulation or production mode
+ * Schema for execution logs of incentive scheme runs (simulation or production)
  */
 const ExecutionLogSchema = new mongoose.Schema(
   {
@@ -14,20 +13,16 @@ const ExecutionLogSchema = new mongoose.Schema(
     },
     schemeId: {
       type: String,
-      required: [true, 'Scheme ID is required']
+      required: true
     },
     mode: {
       type: String,
       enum: ['simulation', 'production'],
-      required: [true, 'Execution mode is required']
-    },
-    executedAt: {
-      type: Date,
-      default: Date.now
+      required: true
     },
     clientId: {
       type: String,
-      required: [true, 'Client ID is required']
+      required: true
     },
     summary: {
       totalAgents: {
@@ -47,77 +42,35 @@ const ExecutionLogSchema = new mongoose.Schema(
         default: 0
       }
     },
-    agents: [
-      {
-        agentId: {
-          type: String,
-          required: true
-        },
-        totalSales: {
-          type: Number,
-          default: 0
-        },
-        qualified: {
-          type: Boolean,
-          default: false
-        },
-        commission: {
-          type: Number,
-          default: 0
-        },
-        baseData: {
-          type: Object,
-          default: {}
-        },
-        qualifyingCriteria: [
-          {
-            rule: {
-              type: String,
-              required: true
-            },
-            result: {
-              type: Boolean,
-              default: false
-            },
-            data: {
-              type: Object,
-              default: {}
-            }
-          }
-        ],
-        exclusions: {
-          type: Array,
-          default: []
-        },
-        adjustments: {
-          type: Array,
-          default: []
-        },
-        customLogic: [
-          {
-            rule: {
-              type: String,
-              required: true
-            },
-            result: {
-              type: Boolean,
-              default: false
-            },
-            notes: {
-              type: String,
-              default: ''
-            }
-          }
-        ]
-      }
-    ],
+    agents: [{
+      agentId: String,
+      qualified: Boolean,
+      commission: Number,
+      totalSales: Number,
+      qualifyingCriteria: [{
+        rule: String,
+        result: Boolean,
+        data: Object
+      }],
+      exclusions: [Object],
+      adjustments: [Object],
+      customLogic: [{
+        rule: String,
+        result: Boolean,
+        notes: String
+      }],
+      baseData: Object
+    }],
     postProcessingLog: {
-      type: mongoose.Schema.Types.Mixed,
-      default: null
+      status: String,
+      message: String,
+      stack: String,
+      timestamp: Date
+    },
+    executedAt: {
+      type: Date,
+      default: Date.now
     }
-  },
-  {
-    timestamps: true
   }
 );
 
@@ -125,7 +78,7 @@ const ExecutionLogSchema = new mongoose.Schema(
  * Generate a unique run ID in the format RUN_DDMMYY_TIMESTAMP
  */
 ExecutionLogSchema.pre('save', function(next) {
-  if (!this.isNew) {
+  if (this.runId) {
     return next();
   }
   
