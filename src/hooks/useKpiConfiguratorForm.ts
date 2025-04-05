@@ -129,7 +129,7 @@ export function useKpiConfiguratorForm() {
     setIsSubmitting(true);
 
     try {
-      // Prepare payload with client ID and timestamps
+      // Prepare payload with client ID
       const payload = {
         ...values,
         adminId: crypto.randomUUID(), // This would typically come from the user's session

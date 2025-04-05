@@ -4,16 +4,39 @@ const { getClientConfig } = require('../utils/clientLoader');
 const clients = require('../config/clients');
 const Scheme = require('../models/Scheme');
 const KpiConfig = require('../models/KpiConfig');
+const connectToMongo = require('../config/runtime-db');
 
 /**
  * Health check controller
  */
-exports.healthCheck = (req, res) => {
+exports.healthCheck = async (req, res) => {
   const baseResponse = {
     status: 'success',
     message: 'API is healthy and running',
     timestamp: new Date()
   };
+
+  // Check if MongoDB URI is provided in headers for runtime connection testing
+  const mongoUri = req.headers['x-mongo-uri'];
+  if (mongoUri) {
+    try {
+      // Attempt to connect with the provided URI
+      await connectToMongo(mongoUri);
+      
+      console.log('Successfully connected to MongoDB with provided URI');
+      baseResponse.mongoConnection = {
+        status: 'connected',
+        message: 'Successfully connected to MongoDB'
+      };
+    } catch (error) {
+      console.error(`MongoDB connection error with provided URI: ${error.message}`);
+      return res.status(500).json({
+        status: 'error',
+        message: `MongoDB connection failed: ${error.message}`,
+        timestamp: new Date()
+      });
+    }
+  }
 
   // Check if clientId is provided in query parameters
   if (req.query.clientId) {
@@ -49,6 +72,26 @@ exports.healthCheck = (req, res) => {
  * Checks database connection and client configurations
  */
 exports.systemDiagnostics = async (req, res) => {
+  const mongoUri = req.headers['x-mongo-uri'];
+  if (!mongoUri) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'MongoDB URI is required in x-mongo-uri header',
+      timestamp: new Date()
+    });
+  }
+
+  try {
+    // Attempt to connect with the provided URI
+    await connectToMongo(mongoUri);
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: `MongoDB connection failed: ${error.message}`,
+      timestamp: new Date()
+    });
+  }
+
   const result = {
     dbStatus: "unknown",
     clientsChecked: [],

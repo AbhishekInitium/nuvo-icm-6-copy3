@@ -9,7 +9,14 @@ export const apiClient = axios.create({
   },
 });
 
-// Request interceptor for adding client ID
+// Function to set MongoDB URI for use in interceptors
+let mongoUri = localStorage.getItem('mongodb_uri') || '';
+
+export const setMongoDbUri = (uri: string) => {
+  mongoUri = uri;
+};
+
+// Request interceptor for adding client ID and MongoDB URI
 apiClient.interceptors.request.use((config) => {
   // Mock client ID for now
   const clientId = 'client_001';
@@ -19,6 +26,14 @@ apiClient.interceptors.request.use((config) => {
     config.url = `${config.url}&clientId=${clientId}`;
   } else {
     config.url = `${config.url}?clientId=${clientId}`;
+  }
+
+  // Add MongoDB URI to headers if available
+  if (mongoUri) {
+    config.headers = {
+      ...config.headers,
+      'x-mongo-uri': mongoUri
+    };
   }
   
   return config;
