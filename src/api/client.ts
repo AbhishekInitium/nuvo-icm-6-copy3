@@ -30,10 +30,13 @@ apiClient.interceptors.request.use((config) => {
 
   // Add MongoDB URI to headers if available
   if (mongoUri) {
+    // Use config.headers.set method for TypeScript compatibility
     config.headers = {
-      ...config.headers,
-      'x-mongo-uri': mongoUri
+      ...config.headers
     };
+    
+    // Set the x-mongo-uri header safely
+    config.headers['x-mongo-uri'] = mongoUri;
   }
   
   return config;
