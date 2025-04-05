@@ -175,7 +175,5 @@ exports.getAgentResultForScheme = async (req, res) => {
   }
 };
 
-module.exports = {
-  getAgentSchemes,
-  getAgentResultForScheme
-};
+// Fix: Use the exports object directly instead of trying to export functions that aren't defined
+module.exports = exports;
