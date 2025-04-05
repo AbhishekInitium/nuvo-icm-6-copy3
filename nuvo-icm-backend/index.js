@@ -1,6 +1,6 @@
 
-const express = require('express');
 require('dotenv').config(); // Ensure this is at the top to load env variables first
+const express = require('express');
 const connectDB = require('./config/db');
 const checkMongoHealth = require('./middleware/mongoHealthCheck');
 const healthRoutes = require('./routes/health.routes');
@@ -16,6 +16,7 @@ const devRoutesSetup = require('./routes/devRoutes');
 const app = express();
 
 // Connect to MongoDB
+console.log(`MongoDB URI loaded: ${process.env.MONGODB_URI ? 'Yes (URI value hidden for security)' : 'No'}`);
 connectDB();
 
 // Middleware
