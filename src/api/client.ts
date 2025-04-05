@@ -30,13 +30,15 @@ apiClient.interceptors.request.use((config) => {
 
   // Add MongoDB URI to headers if available
   if (mongoUri) {
-    // Make sure headers is defined and properly initialized
+    // Create proper headers if they don't exist
     if (!config.headers) {
-      config.headers = {};
+      config.headers = axios.defaults.headers.common;
     }
     
-    // Use type assertion to safely set the custom header
-    config.headers['x-mongo-uri'] = mongoUri;
+    // Set the MongoDB URI header safely using bracket notation
+    if (config.headers) {
+      config.headers['x-mongo-uri'] = mongoUri;
+    }
   }
   
   return config;
