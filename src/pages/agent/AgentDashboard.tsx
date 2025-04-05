@@ -6,6 +6,7 @@ import { AgentScheme, AgentResult, agentApi } from '@/api/agent';
 import { AgentFilters } from '@/components/agent/AgentFilters';
 import { Info, TrendingUp, Award, Calendar } from 'lucide-react';
 import styles from '@/styles/modernUI.module.css';
+import { DateRange } from 'react-day-picker';
 
 export default function AgentDashboard() {
   const { user } = useAuth();
@@ -14,9 +15,11 @@ export default function AgentDashboard() {
   const [results, setResults] = useState<Record<string, AgentResult | null>>({});
   const [selectedScheme, setSelectedScheme] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
+  const [dateRange, setDateRange] = useState<DateRange | { start: Date | null; end: Date | null }>({
     start: null,
     end: null,
+    from: null,  // For DateRange compatibility
+    to: null     // For DateRange compatibility
   });
   const [schemeNameFilter, setSchemeNameFilter] = useState('');
 
@@ -86,22 +89,26 @@ export default function AgentDashboard() {
     }
     
     // Filter by date range
-    if (dateRange.start && new Date(scheme.executedAt) < dateRange.start) {
+    const startDate = 'start' in dateRange ? dateRange.start : dateRange.from;
+    const endDate = 'end' in dateRange ? dateRange.end : dateRange.to;
+    
+    if (startDate && new Date(scheme.executedAt) < startDate) {
       return false;
     }
-    if (dateRange.end && new Date(scheme.executedAt) > dateRange.end) {
+    if (endDate && new Date(scheme.executedAt) > endDate) {
       return false;
     }
     
     return true;
   });
 
-  // Function to determine which icon to show based on scheme type
+  // Function to determine which icon to show based on scheme mode
   const getSchemeIcon = (scheme: AgentScheme) => {
-    switch (scheme.type) {
-      case 'sales':
+    // Use mode instead of type since type doesn't exist in AgentScheme
+    switch (scheme.mode) {
+      case 'production':
         return <TrendingUp size={20} className={styles.infoIcon} />;
-      case 'performance':
+      case 'simulation':
         return <Award size={20} className={styles.infoIcon} />;
       default:
         return <Calendar size={20} className={styles.infoIcon} />;

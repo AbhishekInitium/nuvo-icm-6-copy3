@@ -4,8 +4,8 @@ import { DateRange } from 'react-day-picker';
 import styles from '@/styles/modernUI.module.css';
 
 interface AgentFiltersProps {
-  dateRange: DateRange;
-  setDateRange: React.Dispatch<React.SetStateAction<DateRange>>;
+  dateRange: DateRange | { start: Date | null; end: Date | null };
+  setDateRange: React.Dispatch<React.SetStateAction<DateRange | { start: Date | null; end: Date | null }>>;
   schemeNameFilter: string;
   setSchemeNameFilter: React.Dispatch<React.SetStateAction<string>>;
 }
@@ -24,12 +24,20 @@ export function AgentFilters({
   // In a real app, you might want to use a date picker library
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = e.target.value ? new Date(e.target.value) : null;
-    setDateRange(prev => ({ ...prev, start: date }));
+    setDateRange(prev => ({ 
+      ...prev, 
+      start: date,
+      from: date // Add this for DateRange compatibility
+    }));
   };
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = e.target.value ? new Date(e.target.value) : null;
-    setDateRange(prev => ({ ...prev, end: date }));
+    setDateRange(prev => ({ 
+      ...prev, 
+      end: date,
+      to: date // Add this for DateRange compatibility
+    }));
   };
 
   // Format date for input value
@@ -37,6 +45,10 @@ export function AgentFilters({
     if (!date) return '';
     return date.toISOString().split('T')[0];
   };
+
+  // Safely access date properties
+  const startDate = 'start' in dateRange ? dateRange.start : dateRange.from;
+  const endDate = 'end' in dateRange ? dateRange.end : dateRange.to;
 
   return (
     <>
@@ -57,7 +69,7 @@ export function AgentFilters({
           id="start-date"
           type="date"
           className={styles.input}
-          value={formatDateForInput(dateRange.start)}
+          value={formatDateForInput(startDate)}
           onChange={handleStartDateChange}
         />
       </div>
@@ -67,7 +79,7 @@ export function AgentFilters({
           id="end-date"
           type="date"
           className={styles.input}
-          value={formatDateForInput(dateRange.end)}
+          value={formatDateForInput(endDate)}
           onChange={handleEndDateChange}
         />
       </div>
