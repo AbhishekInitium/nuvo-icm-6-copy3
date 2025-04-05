@@ -1,5 +1,6 @@
 
 const express = require('express');
+require('dotenv').config(); // Ensure this is at the top to load env variables first
 const connectDB = require('./config/db');
 const healthRoutes = require('./routes/health.routes');
 const managerRoutes = require('./routes/managerRoutes');
