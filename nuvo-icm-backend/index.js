@@ -10,6 +10,7 @@ const executionRoutes = require('./routes/executionRoutes');
 const agentRoutes = require('./routes/agentRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
 const opsRoutes = require('./routes/opsRoutes');
+const devRoutesSetup = require('./routes/devRoutes');
 
 // Initialize Express
 const app = express();
@@ -30,6 +31,9 @@ app.use('/api/execute', checkMongoHealth, executionRoutes);
 app.use('/api/agent', checkMongoHealth, agentRoutes);
 app.use('/api/integration', checkMongoHealth, integrationRoutes);
 app.use('/api/ops', checkMongoHealth, opsRoutes);
+
+// Development routes - add last to capture all registered routes
+app.use('/api/dev', devRoutesSetup(app));
 
 // Default route
 app.get('/', (req, res) => {
