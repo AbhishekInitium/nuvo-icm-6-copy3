@@ -309,8 +309,9 @@ function executeDummyLogic(agents, scheme) {
   });
 }
 
+// Fix: Export all the controller functions properly
 module.exports = {
-  runScheme,
-  getAllExecutionLogs,
-  getExecutionLogById
+  runScheme: exports.runScheme,
+  getAllExecutionLogs: exports.getAllExecutionLogs,
+  getExecutionLogById: exports.getExecutionLogById
 };
