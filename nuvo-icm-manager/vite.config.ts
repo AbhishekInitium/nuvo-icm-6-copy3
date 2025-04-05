@@ -6,6 +6,11 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "/",
+  server: {
+    proxy: {
+      "/api": "http://localhost:3000"
+    }
+  },
   plugins: [react()],
   resolve: {
     alias: {

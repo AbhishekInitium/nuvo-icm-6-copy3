@@ -133,12 +133,14 @@ export function useKpiConfiguratorForm() {
       const payload = {
         ...values,
         adminId: crypto.randomUUID(), // This would typically come from the user's session
-        clientId: "client_XYZ", // This would typically come from the user's session
-        createdAt: new Date().toISOString(),
+        clientId: "client_001", // Updated to match the client ID used in interceptor
       };
 
-      // Submit to API
-      await apiClient.post("/admin/configs", payload);
+      console.log("Submitting KPI config:", payload);
+
+      // Submit to API with the correct endpoint path
+      const response = await apiClient.post("/admin/configs", payload);
+      console.log("API Response:", response.data);
 
       toast({
         title: "Configuration created",
