@@ -1,0 +1,255 @@
+
+/* Base styles for modern UI */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.pageHeader {
+  margin-bottom: 2.5rem;
+}
+
+.title {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.cardTitle {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.badgePrimary {
+  background-color: rgba(0, 76, 151, 0.1);
+  color: #004c97;
+}
+
+.badgeSecondary {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.cardContent {
+  font-size: 0.9rem;
+}
+
+.cardDetail {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.detailLabel {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.detailValue {
+  font-weight: 500;
+}
+
+.earningSummary {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+  text-align: center;
+}
+
+.earningAmount {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #004c97;
+}
+
+.infoIcon {
+  color: #6b7280;
+  margin-right: 0.5rem;
+}
+
+.alertBox {
+  background-color: #f5f7fa;
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.alertContent {
+  flex: 1;
+}
+
+.alertTitle {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+}
+
+.filterSection {
+  background-color: #f5f7fa;
+  padding: 1.25rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.inputGroup {
+  flex: 1;
+  min-width: 200px;
+}
+
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: white;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #004c97;
+  box-shadow: 0 0 0 2px rgba(0, 76, 151, 0.1);
+}
+
+.detailPanel {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: 2rem;
+}
+
+.detailHeader {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.detailTitle {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.detailContent {
+  padding: 1.5rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.85rem;
+}
+
+.table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.9rem;
+}
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+/* Animation for card entrance */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate {
+  animation: fadeIn 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+.animate:nth-child(1) { animation-delay: 0.05s; }
+.animate:nth-child(2) { animation-delay: 0.1s; }
+.animate:nth-child(3) { animation-delay: 0.15s; }
+.animate:nth-child(4) { animation-delay: 0.2s; }
+.animate:nth-child(5) { animation-delay: 0.25s; }
+.animate:nth-child(6) { animation-delay: 0.3s; }
+.animate:nth-child(7) { animation-delay: 0.35s; }
+.animate:nth-child(8) { animation-delay: 0.4s; }
+
+@media (max-width: 768px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filterSection {
+    flex-direction: column;
+  }
+  
+  .inputGroup {
+    width: 100%;
+  }
+}

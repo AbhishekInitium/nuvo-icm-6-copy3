@@ -3,11 +3,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { AgentScheme, AgentResult, agentApi } from '@/api/agent';
-import { AgentSchemeCard } from '@/components/agent/AgentSchemeCard';
-import { AgentResultDetails } from '@/components/agent/AgentResultDetails';
 import { AgentFilters } from '@/components/agent/AgentFilters';
-import { Info } from 'lucide-react';
-import styles from '@/styles/agentDashboard.module.css';
+import { Info, TrendingUp, Award, Calendar } from 'lucide-react';
+import styles from '@/styles/modernUI.module.css';
 
 export default function AgentDashboard() {
   const { user } = useAuth();
@@ -98,9 +96,21 @@ export default function AgentDashboard() {
     return true;
   });
 
+  // Function to determine which icon to show based on scheme type
+  const getSchemeIcon = (scheme: AgentScheme) => {
+    switch (scheme.type) {
+      case 'sales':
+        return <TrendingUp size={20} className={styles.infoIcon} />;
+      case 'performance':
+        return <Award size={20} className={styles.infoIcon} />;
+      default:
+        return <Calendar size={20} className={styles.infoIcon} />;
+    }
+  };
+
   return (
-    <div className={styles.dashboardContainer}>
-      <div className={styles.header}>
+    <div className={styles.container}>
+      <div className={styles.pageHeader}>
         <h1 className={styles.title}>My Incentives</h1>
         <p className={styles.subtitle}>View your incentive schemes and earnings</p>
       </div>
@@ -110,9 +120,9 @@ export default function AgentDashboard() {
           <p>Loading your incentive schemes...</p>
         </div>
       ) : schemes.length === 0 ? (
-        <div className={styles.alert}>
-          <div className={styles.alertIcon}>
-            <Info size={20} />
+        <div className={styles.alertBox}>
+          <div>
+            <Info size={20} className={styles.infoIcon} />
           </div>
           <div className={styles.alertContent}>
             <h4 className={styles.alertTitle}>No incentive schemes</h4>
@@ -121,31 +131,38 @@ export default function AgentDashboard() {
         </div>
       ) : (
         <>
-          <AgentFilters 
-            dateRange={dateRange}
-            setDateRange={setDateRange}
-            schemeNameFilter={schemeNameFilter}
-            setSchemeNameFilter={setSchemeNameFilter}
-          />
+          <div className={styles.filterSection}>
+            <AgentFilters 
+              dateRange={dateRange}
+              setDateRange={setDateRange}
+              schemeNameFilter={schemeNameFilter}
+              setSchemeNameFilter={setSchemeNameFilter}
+            />
+          </div>
 
-          <div className={styles.schemeGrid}>
-            {filteredSchemes.map((scheme) => (
+          <div className={styles.cardGrid}>
+            {filteredSchemes.map((scheme, index) => (
               <div
                 key={scheme.schemeId}
-                className={`${styles.schemeCard} ${selectedScheme === scheme.schemeId ? styles.selectedCard : ''}`}
+                className={`${styles.card} ${selectedScheme === scheme.schemeId ? styles.selectedCard : ''} ${styles.animate}`}
                 onClick={() => handleSchemeClick(scheme.schemeId)}
               >
-                <div className={styles.schemeHeader}>
-                  <h3 className={styles.schemeTitle}>{scheme.schemeName}</h3>
+                <div className={styles.cardHeader}>
+                  <h3 className={styles.cardTitle}>{scheme.schemeName}</h3>
+                  <span className={`${styles.badge} ${scheme.mode === 'production' ? styles.badgePrimary : styles.badgeSecondary}`}>
+                    {scheme.mode === 'production' ? 'Production' : 'Simulation'}
+                  </span>
                 </div>
-                <div>
-                  <div className={styles.schemeDetail}>
+                <div className={styles.cardContent}>
+                  <div className={styles.cardDetail}>
                     <span className={styles.detailLabel}>Period:</span>
-                    <span>{scheme.effectiveStart ? new Date(scheme.effectiveStart).toLocaleDateString() : 'N/A'} - {scheme.effectiveEnd ? new Date(scheme.effectiveEnd).toLocaleDateString() : 'N/A'}</span>
+                    <span className={styles.detailValue}>
+                      {scheme.effectiveStart ? new Date(scheme.effectiveStart).toLocaleDateString() : 'N/A'} - {scheme.effectiveEnd ? new Date(scheme.effectiveEnd).toLocaleDateString() : 'N/A'}
+                    </span>
                   </div>
-                  <div className={styles.schemeDetail}>
+                  <div className={styles.cardDetail}>
                     <span className={styles.detailLabel}>Executed:</span>
-                    <span>{new Date(scheme.executedAt).toLocaleDateString()}</span>
+                    <span className={styles.detailValue}>{new Date(scheme.executedAt).toLocaleDateString()}</span>
                   </div>
                   {results[scheme.schemeId] && (
                     <div className={styles.earningSummary}>
@@ -161,26 +178,28 @@ export default function AgentDashboard() {
           </div>
 
           {selectedScheme && results[selectedScheme] && (
-            <div className={styles.resultDetails}>
-              <div className={styles.detailsHeader}>
-                <h3 className={styles.detailsTitle}>Incentive Details</h3>
+            <div className={styles.detailPanel}>
+              <div className={styles.detailHeader}>
+                <h3 className={styles.detailTitle}>Incentive Details</h3>
               </div>
-              <table className={styles.detailsTable}>
-                <thead>
-                  <tr>
-                    <th>Qualification Status</th>
-                    <th>Commission</th>
-                    <th>Total Sales</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>{results[selectedScheme]?.qualified ? 'Qualified' : 'Not Qualified'}</td>
-                    <td>${results[selectedScheme]?.commission.toFixed(2)}</td>
-                    <td>{results[selectedScheme]?.totalSales ? `$${results[selectedScheme]?.totalSales.toFixed(2)}` : 'N/A'}</td>
-                  </tr>
-                </tbody>
-              </table>
+              <div className={styles.detailContent}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Qualification Status</th>
+                      <th>Commission</th>
+                      <th>Total Sales</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{results[selectedScheme]?.qualified ? 'Qualified' : 'Not Qualified'}</td>
+                      <td>${results[selectedScheme]?.commission.toFixed(2)}</td>
+                      <td>{results[selectedScheme]?.totalSales ? `$${results[selectedScheme]?.totalSales.toFixed(2)}` : 'N/A'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>
