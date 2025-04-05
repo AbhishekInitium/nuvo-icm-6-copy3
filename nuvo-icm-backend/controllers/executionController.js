@@ -1,4 +1,3 @@
-
 const Scheme = require('../models/Scheme');
 const ExecutionLog = require('../models/ExecutionLog');
 const { getClientConfig } = require('../utils/clientLoader');
@@ -11,44 +10,63 @@ const fs = require('fs');
  * @access  Private
  */
 exports.runScheme = async (req, res) => {
+  // Create a base execution log to track execution even if there's a failure
+  let executionLog = {
+    schemeId: null,
+    mode: null,
+    clientId: null,
+    summary: {
+      totalAgents: 0,
+      passed: 0,
+      failed: 0,
+      totalCommission: 0
+    },
+    agents: [],
+    postProcessingLog: null,
+    error: null
+  };
+  
+  // Log execution start
+  console.log(`Execution started: ${new Date().toISOString()}`);
+  
   try {
     const { schemeId, mode, clientId } = req.body;
+    console.log(`Executing scheme: ${schemeId} for client: ${clientId} at: ${new Date().toISOString()}`);
+
+    // Update the execution log with the initial request data
+    executionLog.schemeId = schemeId;
+    executionLog.mode = mode;
+    executionLog.clientId = clientId;
 
     if (!clientId) {
-      return res.status(400).json({ success: false, error: 'Client ID is required' });
+      throw new Error('Client ID is required');
     }
 
     if (!schemeId) {
-      return res.status(400).json({ success: false, error: 'Scheme ID is required' });
+      throw new Error('Scheme ID is required');
     }
 
     if (!mode || !['simulation', 'production'].includes(mode)) {
-      return res.status(400).json({ success: false, error: 'Valid mode (simulation or production) is required' });
+      throw new Error('Valid mode (simulation or production) is required');
     }
 
     // Validate clientId using the clientLoader
     try {
       getClientConfig(clientId);
     } catch (error) {
-      return res.status(404).json({ success: false, error: error.message });
+      throw new Error(error.message);
     }
 
     // Find the scheme
     const scheme = await Scheme.findOne({ schemeId, clientId });
     
     if (!scheme) {
-      return res.status(404).json({
-        success: false,
-        error: `Scheme with ID ${schemeId} not found for client ${clientId}`
-      });
+      throw new Error(`Scheme with ID ${schemeId} not found for client ${clientId}`);
     }
 
     // Validate scheme status for production runs
     if (mode === 'production' && scheme.status === 'ProdRun') {
-      return res.status(400).json({
-        success: false,
-        error: 'This scheme has already been run in production mode'
-      });
+      throw new Error('This scheme has already been run in production mode');
     }
 
     // Simulate execution with dummy data
@@ -57,19 +75,13 @@ exports.runScheme = async (req, res) => {
     const dummyAgents = generateDummyAgents(10);
     let executionResults = executeDummyLogic(dummyAgents, scheme);
     
-    // Create initial execution log object
-    let executionLog = {
-      schemeId: scheme.schemeId,
-      mode,
-      clientId,
-      summary: {
-        totalAgents: executionResults.length,
-        passed: executionResults.filter(agent => agent.qualified).length,
-        failed: executionResults.filter(agent => !agent.qualified).length,
-        totalCommission: executionResults.reduce((total, agent) => total + agent.commission, 0)
-      },
-      agents: executionResults,
-      postProcessingLog: null
+    // Update execution log with results
+    executionLog.agents = executionResults;
+    executionLog.summary = {
+      totalAgents: executionResults.length,
+      passed: executionResults.filter(agent => agent.qualified).length,
+      failed: executionResults.filter(agent => !agent.qualified).length,
+      totalCommission: executionResults.reduce((total, agent) => total + agent.commission, 0)
     };
 
     // Check if the scheme has a post-processor plugin
@@ -132,6 +144,8 @@ exports.runScheme = async (req, res) => {
       await scheme.save();
     }
 
+    console.log(`Execution completed successfully: ${savedLog.runId}`);
+
     return res.status(200).json({
       success: true,
       data: {
@@ -144,10 +158,32 @@ exports.runScheme = async (req, res) => {
 
   } catch (error) {
     console.error('Error running scheme:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Server Error'
-    });
+    
+    // Record error details in the execution log
+    executionLog.error = {
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date()
+    };
+    
+    try {
+      // Save the failed execution log to track the error
+      const savedLog = await ExecutionLog.create(executionLog);
+      console.log(`Execution failed, error logged with runId: ${savedLog.runId}`);
+      
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+        runId: savedLog.runId
+      });
+    } catch (logError) {
+      console.error('Error saving execution log:', logError);
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+        logError: 'Failed to save execution log'
+      });
+    }
   }
 };
 
@@ -234,8 +270,6 @@ exports.getExecutionLogById = async (req, res) => {
     });
   }
 };
-
-// Helper functions for dummy data generation and execution
 
 /**
  * Generate dummy agent data for testing

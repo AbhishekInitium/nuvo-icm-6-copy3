@@ -67,6 +67,11 @@ const ExecutionLogSchema = new mongoose.Schema(
       stack: String,
       timestamp: Date
     },
+    error: {
+      message: String,
+      stack: String,
+      timestamp: Date
+    },
     executedAt: {
       type: Date,
       default: Date.now
