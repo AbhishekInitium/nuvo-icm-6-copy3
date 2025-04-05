@@ -18,4 +18,11 @@ router.get('/configs', adminConfigController.getAllConfigs);
  */
 router.get('/config/:adminName', adminConfigController.getConfigByName);
 
+/**
+ * @route   POST /api/admin/configs
+ * @desc    Save a new admin configuration
+ * @access  Private
+ */
+router.post('/configs', adminConfigController.saveConfig);
+
 module.exports = router;
