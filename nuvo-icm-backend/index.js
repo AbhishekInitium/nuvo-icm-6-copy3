@@ -2,6 +2,7 @@
 const express = require('express');
 require('dotenv').config(); // Ensure this is at the top to load env variables first
 const connectDB = require('./config/db');
+const checkMongoHealth = require('./middleware/mongoHealthCheck');
 const healthRoutes = require('./routes/health.routes');
 const managerRoutes = require('./routes/managerRoutes');
 const adminConfigRoutes = require('./routes/adminConfigRoutes');
@@ -21,12 +22,14 @@ app.use(express.json());
 
 // Routes
 app.use('/api', healthRoutes);
-app.use('/api/manager', managerRoutes);
-app.use('/api/admin', adminConfigRoutes);
-app.use('/api/execute', executionRoutes);
-app.use('/api/agent', agentRoutes);
-app.use('/api/integration', integrationRoutes);
-app.use('/api/ops', opsRoutes);
+
+// Apply MongoDB health check middleware to all key routes
+app.use('/api/manager', checkMongoHealth, managerRoutes);
+app.use('/api/admin', checkMongoHealth, adminConfigRoutes);
+app.use('/api/execute', checkMongoHealth, executionRoutes);
+app.use('/api/agent', checkMongoHealth, agentRoutes);
+app.use('/api/integration', checkMongoHealth, integrationRoutes);
+app.use('/api/ops', checkMongoHealth, opsRoutes);
 
 // Default route
 app.get('/', (req, res) => {
