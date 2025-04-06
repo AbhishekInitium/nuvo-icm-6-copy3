@@ -10,6 +10,7 @@ const executionRoutes = require('./routes/executionRoutes');
 const agentRoutes = require('./routes/agentRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
 const opsRoutes = require('./routes/opsRoutes');
+const systemRoutes = require('./routes/systemRoutes');
 const devRoutesSetup = require('./routes/devRoutes');
 
 // Initialize Express
@@ -24,6 +25,9 @@ app.use(express.json());
 
 // Routes
 app.use('/api', healthRoutes);
+
+// System configuration routes (before checkMongoHealth to allow setting up the DB)
+app.use('/api/system', systemRoutes);
 
 // Apply MongoDB health check middleware to all key routes
 app.use('/api/manager', checkMongoHealth, managerRoutes);

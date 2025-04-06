@@ -11,6 +11,11 @@ const SystemConfigSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  mongoUri: {
+    type: String,
+    required: [true, 'MongoDB URI is required'],
+    trim: true
+  },
   sapSystemId: {
     type: String,
     required: [true, 'SAP System ID is required'],
