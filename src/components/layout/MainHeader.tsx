@@ -3,22 +3,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-// Mock client data lookup (would come from an API in production)
-const mockClients = {
-  'ACME-001': 'ACME Corporation',
-  'Globex-002': 'Globex Industries',
-  'Initech-003': 'Initech Solutions',
-  'Umbrella-004': 'Umbrella Enterprises',
-  'Cyberdyne-005': 'Cyberdyne Systems'
-};
-
 interface MainHeaderProps {
   isMobile: boolean;
 }
 
 export function MainHeader({ isMobile }: MainHeaderProps) {
   const { user } = useAuth();
-  const clientName = user?.clientId ? (mockClients[user.clientId] || user.clientId) : 'Unknown Client';
   
   // Get user initials for avatar
   const getUserInitials = () => {
@@ -35,14 +25,6 @@ export function MainHeader({ isMobile }: MainHeaderProps) {
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
         <SidebarTrigger />
-        {user && (
-          <h1 style={{ 
-            fontSize: '1.5rem',
-            fontWeight: 'bold'
-          }}>
-            Welcome, {user.username} ({clientName})
-          </h1>
-        )}
       </div>
       
       {/* Mobile-only user info */}
@@ -68,3 +50,4 @@ export function MainHeader({ isMobile }: MainHeaderProps) {
     </div>
   );
 }
+
