@@ -49,30 +49,62 @@ export interface SetupConnectionResponse {
  * Test MongoDB connection
  */
 export const testConnection = async (mongoUri: string): Promise<ConnectionTestResponse> => {
-  const response = await apiClient.post('/system/test-connection', { mongoUri });
-  return response.data;
+  try {
+    const response = await apiClient.post('/system/test-connection', { mongoUri });
+    return response.data;
+  } catch (error) {
+    console.error('API Error during connection test:', error);
+    return { 
+      success: false, 
+      error: error.response?.data?.error || error.message || 'Connection test failed: Network error'
+    };
+  }
 };
 
 /**
  * Set up client MongoDB collections
  */
 export const setupConnection = async (clientId: string, mongoUri: string): Promise<SetupConnectionResponse> => {
-  const response = await apiClient.post('/system/set-connection', { clientId, mongoUri });
-  return response.data;
+  try {
+    const response = await apiClient.post('/system/set-connection', { clientId, mongoUri });
+    return response.data;
+  } catch (error) {
+    console.error('API Error during setup:', error);
+    return { 
+      success: false, 
+      error: error.response?.data?.error || error.message || 'Setup connection failed: Network error'
+    };
+  }
 };
 
 /**
  * Save system configuration including MongoDB URI
  */
 export const saveSystemConfig = async (config: SystemConfigInput): Promise<SystemConfigResponse> => {
-  const response = await apiClient.post('/system/config', config);
-  return response.data;
+  try {
+    const response = await apiClient.post('/system/config', config);
+    return response.data;
+  } catch (error) {
+    console.error('API Error during save config:', error);
+    return { 
+      success: false, 
+      error: error.response?.data?.error || error.message || 'Save configuration failed: Network error'
+    };
+  }
 };
 
 /**
  * Get system configuration (MongoDB URI will be masked)
  */
 export const getSystemConfig = async (clientId: string): Promise<any> => {
-  const response = await apiClient.get(`/system/config`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/system/config`);
+    return response.data;
+  } catch (error) {
+    console.error('API Error during get config:', error);
+    return { 
+      success: false, 
+      error: error.response?.data?.error || error.message || 'Get configuration failed: Network error'
+    };
+  }
 };

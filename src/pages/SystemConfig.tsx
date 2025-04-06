@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,8 +13,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { saveSystemConfig, getSystemConfig, SystemConfigInput, testConnection, setupConnection } from '@/api/system';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
-// Define the validation schema for database connection setup
 const databaseSetupSchema = z.object({
   clientId: z.string().min(3, { message: "Client ID must be at least 3 characters" })
     .regex(/^[A-Za-z0-9_-]+$/, { message: "Client ID can only contain letters, numbers, underscores and hyphens" }),
@@ -23,7 +22,6 @@ const databaseSetupSchema = z.object({
     .regex(/^mongodb(\+srv)?:\/\//, { message: "MongoDB URI must start with mongodb:// or mongodb+srv://" })
 });
 
-// Define the validation schema for system configuration
 const systemConfigSchema = z.object({
   clientId: z.string().min(3, { message: "Client ID must be at least 3 characters" }),
   sapSystemId: z.string().optional(),
@@ -51,8 +49,8 @@ export function SystemConfig() {
   const [setupComplete, setSetupComplete] = useState(false);
   const [collections, setCollections] = useState<{ [key: string]: string } | null>(null);
   const [kpiMappings, setKpiMappings] = useState<KpiMapping[]>([{ id: '1', kpiName: '', apiEndpoint: '' }]);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   
-  // Initialize the setup form
   const setupForm = useForm<DatabaseSetupValues>({
     resolver: zodResolver(databaseSetupSchema),
     defaultValues: {
@@ -61,7 +59,6 @@ export function SystemConfig() {
     }
   });
 
-  // Initialize the config form
   const configForm = useForm<SystemConfigValues>({
     resolver: zodResolver(systemConfigSchema),
     defaultValues: {
@@ -73,7 +70,6 @@ export function SystemConfig() {
     }
   });
 
-  // Load existing configuration
   useEffect(() => {
     const clientId = user?.clientId || setupForm.getValues('clientId');
     if (clientId) {
@@ -81,20 +77,17 @@ export function SystemConfig() {
     }
   }, [user]);
 
-  // Handle KPI mapping changes
   const handleKpiChange = (id: string, field: 'kpiName' | 'apiEndpoint', value: string) => {
     setKpiMappings(prev => 
       prev.map(mapping => mapping.id === id ? { ...mapping, [field]: value } : mapping)
     );
   };
 
-  // Add new KPI mapping row
   const addKpiMapping = () => {
     const newId = String(Date.now());
     setKpiMappings(prev => [...prev, { id: newId, kpiName: '', apiEndpoint: '' }]);
   };
 
-  // Remove KPI mapping row
   const removeKpiMapping = (id: string) => {
     if (kpiMappings.length <= 1) {
       toast({
@@ -108,13 +101,13 @@ export function SystemConfig() {
     setKpiMappings(prev => prev.filter(mapping => mapping.id !== id));
   };
 
-  // Test database connection
   const handleTestConnection = async () => {
     const isValid = await setupForm.trigger();
     if (!isValid) return;
     
     try {
       setTestingConnection(true);
+      setErrorDetails(null);
       const mongoUri = setupForm.getValues('mongoUri');
       
       const response = await testConnection(mongoUri);
@@ -127,14 +120,18 @@ export function SystemConfig() {
         });
       } else {
         setConnectionStatus('failed');
+        setErrorDetails(response.error || "Failed to connect to MongoDB");
         throw new Error(response.error || "Failed to connect to MongoDB");
       }
     } catch (error) {
       setConnectionStatus('failed');
       console.error('Error testing connection:', error);
+      const errorMessage = error instanceof Error ? error.message : "There was an error testing the connection.";
+      setErrorDetails(errorMessage);
+      
       toast({
         title: "Connection Failed",
-        description: error instanceof Error ? error.message : "There was an error testing the connection.",
+        description: "MongoDB connection test failed. See details below.",
         variant: "destructive"
       });
     } finally {
@@ -142,7 +139,6 @@ export function SystemConfig() {
     }
   };
 
-  // Set up database connection
   const handleSetupConnection = async () => {
     const isValid = await setupForm.trigger();
     if (!isValid) return;
@@ -157,7 +153,6 @@ export function SystemConfig() {
         setSetupComplete(true);
         setCollections(response.data?.collections || null);
         
-        // Update the client ID in the config form
         configForm.setValue('clientId', clientId);
         
         toast({
@@ -179,22 +174,19 @@ export function SystemConfig() {
     }
   };
 
-  // Save configuration
   const onSubmitConfig = async (data: SystemConfigValues) => {
     try {
       setLoading(true);
       
-      // Prepare the data for the API
       const configData: SystemConfigInput = {
         clientId: data.clientId,
-        mongoUri: setupForm.getValues('mongoUri'), // This won't be used but included for API compatibility
+        mongoUri: setupForm.getValues('mongoUri'),
         sapSystemId: data.sapSystemId,
         sapBaseUrl: data.sapBaseUrl,
         sapUsername: data.sapUsername,
         sapPassword: data.sapPassword
       };
       
-      // Save the configuration
       const response = await saveSystemConfig(configData);
       
       if (response.success) {
@@ -217,7 +209,6 @@ export function SystemConfig() {
     }
   };
 
-  // Load existing configuration
   const loadConfig = async (clientId: string) => {
     if (!clientId) {
       toast({
@@ -234,13 +225,11 @@ export function SystemConfig() {
       const response = await getSystemConfig(clientId);
       
       if (response.success) {
-        // Check setup status
         setSetupComplete(response.setupComplete || false);
         
         if (response.data) {
           const config = response.data;
           
-          // Update form with response data if we have configuration
           configForm.reset({
             clientId: config.clientId,
             sapSystemId: config.sapSystemId || '',
@@ -249,7 +238,6 @@ export function SystemConfig() {
             sapPassword: config.sapPassword || ''
           });
           
-          // Update KPI mappings if available
           if (config.kpiApiMappings && Array.isArray(config.kpiApiMappings)) {
             setKpiMappings(config.kpiApiMappings.map((mapping: any, index: number) => ({
               id: String(index + 1),
@@ -258,7 +246,6 @@ export function SystemConfig() {
             })));
           }
           
-          // Update collections if master setup is complete
           if (config.masterSetupComplete) {
             setCollections({
               schemes: `${clientId}.schemes`,
@@ -273,13 +260,11 @@ export function SystemConfig() {
             description: `System configuration for ${config.clientId} has been loaded.`
           });
         } else if (response.setupComplete) {
-          // If setup is complete but no configuration saved yet
           toast({
             title: "Database Setup Complete",
             description: `Database is configured for ${clientId} but no system configuration has been saved yet.`
           });
         } else {
-          // If setup is not yet complete
           toast({
             title: "Database Setup Required",
             description: `Database setup is required for client ${clientId}.`,
@@ -307,7 +292,6 @@ export function SystemConfig() {
         System Integration Configuration
       </h1>
       
-      {/* Database Connection Setup */}
       <Card className="mb-8">
         <CardHeader className="bg-blue-50">
           <CardTitle className="text-blue-700 text-lg font-bold flex items-center gap-2">
@@ -360,6 +344,16 @@ export function SystemConfig() {
                   )}
                 />
               </div>
+
+              {connectionStatus === 'failed' && errorDetails && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Connection Failed</AlertTitle>
+                  <AlertDescription className="mt-2 text-sm whitespace-pre-wrap">
+                    {errorDetails}
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <div className="flex flex-col sm:flex-row gap-2 mt-4">
                 <Button 
@@ -419,7 +413,6 @@ export function SystemConfig() {
         </CardContent>
       </Card>
       
-      {/* System Configuration */}
       <Form {...configForm}>
         <form onSubmit={configForm.handleSubmit(onSubmitConfig)}>
           <div className="mb-8 flex gap-4 justify-end">
@@ -433,7 +426,6 @@ export function SystemConfig() {
             </Button>
           </div>
           
-          {/* SAP System Connection */}
           <Card className="mb-6">
             <CardHeader className="bg-green-50">
               <CardTitle className="text-green-700 text-lg font-bold">
@@ -515,7 +507,6 @@ export function SystemConfig() {
             </CardContent>
           </Card>
           
-          {/* KPI API Mappings */}
           <Card>
             <CardHeader className="bg-purple-50">
               <CardTitle className="text-purple-700 text-lg font-bold">

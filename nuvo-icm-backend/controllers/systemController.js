@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
 const MasterConfig = require('../models/MasterConfig');
@@ -38,16 +37,36 @@ exports.testConnection = async (req, res) => {
       });
     } catch (connectionError) {
       console.error('MongoDB connection test failed:', connectionError);
+      
+      // Generate more detailed error message depending on error type
+      let detailedError = 'Could not connect to MongoDB.';
+      
+      if (connectionError.name === 'MongoServerSelectionError') {
+        detailedError = 'Could not reach MongoDB server. Check if the server address is correct and accessible.';
+      } else if (connectionError.name === 'MongoParseError') {
+        detailedError = 'MongoDB connection string format is invalid. Please check the URI format.';
+      } else if (connectionError.message && connectionError.message.includes('Authentication failed')) {
+        detailedError = 'Authentication failed. Please verify username and password in your connection string.';
+      } else if (connectionError.message && connectionError.message.includes('ENOTFOUND')) {
+        detailedError = 'Host not found. Please check if the MongoDB server hostname is correct.';
+      } else if (connectionError.message && connectionError.message.includes('ECONNREFUSED')) {
+        detailedError = 'Connection refused. MongoDB server may not be running or port may be blocked.';
+      } else if (connectionError.message && connectionError.message.includes('timed out')) {
+        detailedError = 'Connection timed out. MongoDB server might be too slow or unreachable.';
+      } else if (connectionError.message && connectionError.message.includes('SSL')) {
+        detailedError = 'SSL/TLS error. There may be an issue with the certificate or SSL configuration.';
+      }
+      
       return res.status(400).json({ 
         success: false, 
-        error: `Invalid MongoDB URI: ${connectionError.message}` 
+        error: `${detailedError} Original error: ${connectionError.message}` 
       });
     }
   } catch (error) {
     console.error('Error testing MongoDB connection:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server Error'
+      error: `Server Error: ${error.message}`
     });
   }
 };
