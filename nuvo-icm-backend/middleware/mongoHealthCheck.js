@@ -1,9 +1,10 @@
+
 const mongoose = require('mongoose');
-const SystemConfig = require('../models/SystemConfig');
+const MasterConfig = require('../models/MasterConfig');
 
 /**
  * Middleware to check MongoDB connection health before processing requests
- * This will attempt to use client-specific MongoDB URI if available
+ * This will attempt to use client-specific MongoDB URI from MasterConfig
  */
 const checkMongoHealth = async (req, res, next) => {
   // Extract clientId from query or body
@@ -17,14 +18,24 @@ const checkMongoHealth = async (req, res, next) => {
   }
   
   try {
-    // Check if we have a system config with MongoDB URI for this client
-    const config = await SystemConfig.findOne({ clientId });
+    // Check if we have a master config with MongoDB URI for this client
+    const masterConfig = await MasterConfig.findOne({ clientId });
+    
+    // If client has not been set up, return error
+    if (!masterConfig || !masterConfig.setupComplete) {
+      return res.status(400).json({
+        success: false,
+        error: `Database setup is not complete for client: ${clientId}`
+      });
+    }
     
     // If we have a client-specific MongoDB URI, use it
-    if (config && config.mongoUri) {
+    if (masterConfig.mongoUri) {
       // If already connected to the right database, proceed
       if (mongoose.connection.readyState === 1 && 
-          mongoose.connection.client.s.url === config.mongoUri) {
+          mongoose.connection.client.s.url === masterConfig.mongoUri) {
+        // Store collections info in request for controllers to use
+        req.clientCollections = masterConfig.collections;
         return next();
       }
       
@@ -36,10 +47,13 @@ const checkMongoHealth = async (req, res, next) => {
         }
         
         // Connect to client-specific MongoDB
-        await mongoose.connect(config.mongoUri, {
+        const conn = await mongoose.connect(masterConfig.mongoUri, {
           useNewUrlParser: true,
           useUnifiedTopology: true
         });
+        
+        // Store collections info in request for controllers to use
+        req.clientCollections = masterConfig.collections;
         
         console.log(`Connected to client-specific MongoDB for client: ${clientId}`);
         return next();
@@ -52,17 +66,11 @@ const checkMongoHealth = async (req, res, next) => {
       }
     }
     
-    // If no client-specific URI, check if default connection is established
-    if (mongoose.connection.readyState !== 1) {
-      console.error('MongoDB connection is not established');
-      return res.status(503).json({
-        success: false,
-        error: 'Database connection is not available'
-      });
-    }
-    
-    // If we reach here, default connection is active
-    next();
+    // If no client-specific URI found but we got this far, something is wrong
+    return res.status(503).json({
+      success: false,
+      error: 'Client database configuration is incomplete'
+    });
   } catch (error) {
     console.error('Error checking MongoDB health:', error);
     return res.status(500).json({

@@ -18,8 +18,48 @@ export interface SystemConfigResponse {
     status: string;
     timestamp: string;
   };
+  setupComplete?: boolean;
   error?: string;
 }
+
+export interface ConnectionTestResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+export interface SetupConnectionResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    clientId: string;
+    collections: {
+      schemes: string;
+      executionlogs: string;
+      kpiconfigs: string;
+      systemconfigs: string;
+    };
+    setupComplete: boolean;
+    createdAt: string;
+  };
+  error?: string;
+}
+
+/**
+ * Test MongoDB connection
+ */
+export const testConnection = async (mongoUri: string): Promise<ConnectionTestResponse> => {
+  const response = await apiClient.post('/system/test-connection', { mongoUri });
+  return response.data;
+};
+
+/**
+ * Set up client MongoDB collections
+ */
+export const setupConnection = async (clientId: string, mongoUri: string): Promise<SetupConnectionResponse> => {
+  const response = await apiClient.post('/system/set-connection', { clientId, mongoUri });
+  return response.data;
+};
 
 /**
  * Save system configuration including MongoDB URI
