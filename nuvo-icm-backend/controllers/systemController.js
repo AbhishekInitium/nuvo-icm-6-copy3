@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
 const MasterConfig = require('../models/MasterConfig');
+const { connectClientDb, closeClientConnection } = require('../utils/clientConnection');
 
 /**
  * @desc    Test MongoDB connection
@@ -51,10 +52,6 @@ exports.testConnection = async (req, res) => {
         detailedError = 'Host not found. Please check if the MongoDB server hostname is correct.';
       } else if (connectionError.message && connectionError.message.includes('ECONNREFUSED')) {
         detailedError = 'Connection refused. MongoDB server may not be running or port may be blocked.';
-      } else if (connectionError.message && connectionError.message.includes('timed out')) {
-        detailedError = 'Connection timed out. MongoDB server might be too slow or unreachable.';
-      } else if (connectionError.message && connectionError.message.includes('SSL')) {
-        detailedError = 'SSL/TLS error. There may be an issue with the certificate or SSL configuration.';
       }
       
       return res.status(400).json({ 
@@ -106,18 +103,33 @@ exports.setConnection = async (req, res) => {
     }
 
     // Test connection to the provided MongoDB URI
-    let masterDbConnection;
+    let clientDbConnection;
     try {
-      masterDbConnection = await mongoose.createConnection(mongoUri, {
+      clientDbConnection = await mongoose.createConnection(mongoUri, {
         useNewUrlParser: true,
-        useUnifiedTopology: true
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 10000 // 10 seconds timeout
       });
       console.log(`MongoDB connection established for client setup: ${clientId}`);
     } catch (connectionError) {
       console.error('MongoDB connection failed:', connectionError);
+      
+      // Generate more detailed error message depending on error type
+      let detailedError = 'Could not connect to MongoDB.';
+      
+      if (connectionError.name === 'MongoServerSelectionError') {
+        detailedError = 'Could not reach MongoDB server. Check if the server address is correct and accessible.';
+      } else if (connectionError.name === 'MongoParseError') {
+        detailedError = 'MongoDB connection string format is invalid. Please check the URI format.';
+      } else if (connectionError.message && connectionError.message.includes('Authentication failed')) {
+        detailedError = 'Authentication failed. Please verify username and password in your connection string.';
+      } else if (connectionError.message && connectionError.message.includes('ENOTFOUND')) {
+        detailedError = 'Host not found. Please check if the MongoDB server hostname is correct.';
+      }
+      
       return res.status(400).json({ 
         success: false, 
-        error: `Invalid MongoDB URI: ${connectionError.message}` 
+        error: `Invalid MongoDB URI: ${detailedError}` 
       });
     }
 
@@ -131,16 +143,40 @@ exports.setConnection = async (req, res) => {
 
     // Create the collections (this just ensures they exist in MongoDB)
     try {
-      await masterDbConnection.createCollection(collections.schemes);
-      await masterDbConnection.createCollection(collections.executionlogs);
-      await masterDbConnection.createCollection(collections.kpiconfigs);
-      await masterDbConnection.createCollection(collections.systemconfigs);
+      await clientDbConnection.createCollection(collections.schemes);
+      await clientDbConnection.createCollection(collections.executionlogs);
+      await clientDbConnection.createCollection(collections.kpiconfigs);
+      await clientDbConnection.createCollection(collections.systemconfigs);
     } catch (collectionError) {
       console.error('Error creating collections:', collectionError);
-      await masterDbConnection.close();
+      await clientDbConnection.close();
       return res.status(500).json({
         success: false,
         error: `Failed to create collections: ${collectionError.message}`
+      });
+    }
+
+    // Verify that the collections were created successfully
+    try {
+      const collectionsList = await clientDbConnection.db.listCollections().toArray();
+      const collectionNames = collectionsList.map(c => c.name);
+      
+      const missingCollections = Object.values(collections)
+        .filter(name => !collectionNames.includes(name.split('.')[1]));
+      
+      if (missingCollections.length > 0) {
+        await clientDbConnection.close();
+        return res.status(500).json({
+          success: false,
+          error: `Failed to verify collections: ${missingCollections.join(', ')} were not created.`
+        });
+      }
+    } catch (verifyError) {
+      console.error('Error verifying collections:', verifyError);
+      await clientDbConnection.close();
+      return res.status(500).json({
+        success: false,
+        error: `Failed to verify collections: ${verifyError.message}`
       });
     }
 
@@ -161,7 +197,7 @@ exports.setConnection = async (req, res) => {
     }
 
     // Close the connection
-    await masterDbConnection.close();
+    await clientDbConnection.close();
 
     // Return the saved configuration
     return res.status(200).json({
@@ -209,18 +245,15 @@ exports.saveSystemConfig = async (req, res) => {
       });
     }
 
-    // Connect to the client's database
+    // Connect to the client's database using our new utility
     let clientDbConnection;
     try {
-      clientDbConnection = await mongoose.createConnection(masterConfig.mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      });
+      clientDbConnection = await connectClientDb(clientId);
     } catch (connectionError) {
       console.error('MongoDB connection failed:', connectionError);
       return res.status(500).json({
         success: false,
-        error: 'Failed to connect to client database'
+        error: `Failed to connect to client database: ${connectionError.message}`
       });
     }
 
@@ -230,7 +263,7 @@ exports.saveSystemConfig = async (req, res) => {
         clientId: String,
         ...SystemConfig.schema.obj // Copy fields from our main SystemConfig schema
       }), 
-      masterConfig.collections.systemconfigs // Use the client-specific collection
+      masterConfig.collections.systemconfigs.split('.')[1] // Use the client-specific collection
     );
 
     // Check if config already exists for this client
@@ -251,9 +284,6 @@ exports.saveSystemConfig = async (req, res) => {
       });
     }
 
-    // Close the client connection
-    await clientDbConnection.close();
-
     // Return success with limited data
     return res.status(200).json({
       success: true,
@@ -268,7 +298,7 @@ exports.saveSystemConfig = async (req, res) => {
     console.error('Error saving system configuration:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server Error'
+      error: `Server Error: ${error.message}`
     });
   }
 };
@@ -301,18 +331,15 @@ exports.getSystemConfig = async (req, res) => {
       });
     }
 
-    // Connect to the client's database
+    // Connect to the client's database using our new utility
     let clientDbConnection;
     try {
-      clientDbConnection = await mongoose.createConnection(masterConfig.mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      });
+      clientDbConnection = await connectClientDb(clientId);
     } catch (connectionError) {
       console.error('MongoDB connection failed:', connectionError);
       return res.status(500).json({
         success: false,
-        error: 'Failed to connect to client database'
+        error: `Failed to connect to client database: ${connectionError.message}`
       });
     }
 
@@ -322,14 +349,11 @@ exports.getSystemConfig = async (req, res) => {
         clientId: String,
         ...SystemConfig.schema.obj // Copy fields from our main SystemConfig schema
       }), 
-      masterConfig.collections.systemconfigs // Use the client-specific collection
+      masterConfig.collections.systemconfigs.split('.')[1] // Use the client-specific collection
     );
 
     // Get client system config
     const config = await ClientSystemConfig.findOne({ clientId });
-
-    // Close the client connection
-    await clientDbConnection.close();
 
     if (!config) {
       return res.status(200).json({
@@ -355,7 +379,54 @@ exports.getSystemConfig = async (req, res) => {
     console.error('Error retrieving system configuration:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server Error'
+      error: `Server Error: ${error.message}`
+    });
+  }
+};
+
+/**
+ * @desc    Get client's database connection status
+ * @route   GET /api/system/connection-status
+ * @access  Private/Admin
+ */
+exports.getConnectionStatus = async (req, res) => {
+  try {
+    const { clientId } = req.query;
+    
+    // If clientId provided, check specific client connection
+    if (clientId) {
+      try {
+        const connection = await connectClientDb(clientId);
+        return res.status(200).json({
+          success: true,
+          data: {
+            clientId,
+            connected: connection.readyState === 1,
+            readyState: connection.readyState
+          }
+        });
+      } catch (error) {
+        return res.status(404).json({
+          success: false,
+          error: error.message
+        });
+      }
+    } 
+    
+    // Otherwise return all connection statuses from cached connections
+    const { getConnectionStatus } = require('../utils/clientConnection');
+    const statuses = getConnectionStatus();
+    
+    return res.status(200).json({
+      success: true,
+      data: statuses
+    });
+    
+  } catch (error) {
+    console.error('Error getting connection status:', error);
+    return res.status(500).json({
+      success: false,
+      error: `Server Error: ${error.message}`
     });
   }
 };

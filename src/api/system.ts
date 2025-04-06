@@ -45,6 +45,16 @@ export interface SetupConnectionResponse {
   error?: string;
 }
 
+export interface ConnectionStatusResponse {
+  success: boolean;
+  data?: {
+    clientId?: string;
+    connected: boolean;
+    readyState: number;
+  };
+  error?: string;
+}
+
 /**
  * Test MongoDB connection
  */
@@ -98,13 +108,33 @@ export const saveSystemConfig = async (config: SystemConfigInput): Promise<Syste
  */
 export const getSystemConfig = async (clientId: string): Promise<any> => {
   try {
-    const response = await apiClient.get(`/system/config`);
+    const response = await apiClient.get(`/system/config`, {
+      params: { clientId }
+    });
     return response.data;
   } catch (error) {
     console.error('API Error during get config:', error);
     return { 
       success: false, 
       error: error.response?.data?.error || error.message || 'Get configuration failed: Network error'
+    };
+  }
+};
+
+/**
+ * Get connection status for a specific client or all clients
+ */
+export const getConnectionStatus = async (clientId?: string): Promise<ConnectionStatusResponse> => {
+  try {
+    const response = await apiClient.get('/system/connection-status', {
+      params: clientId ? { clientId } : {}
+    });
+    return response.data;
+  } catch (error) {
+    console.error('API Error getting connection status:', error);
+    return { 
+      success: false, 
+      error: error.response?.data?.error || error.message || 'Get connection status failed: Network error'
     };
   }
 };

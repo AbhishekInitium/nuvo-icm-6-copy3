@@ -32,4 +32,11 @@ router.post('/test-connection', systemController.testConnection);
  */
 router.post('/set-connection', systemController.setConnection);
 
+/**
+ * @route   GET /api/system/connection-status
+ * @desc    Get client's database connection status
+ * @access  Private/Admin
+ */
+router.get('/connection-status', systemController.getConnectionStatus);
+
 module.exports = router;
