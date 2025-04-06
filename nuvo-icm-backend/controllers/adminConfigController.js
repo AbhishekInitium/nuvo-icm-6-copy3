@@ -1,7 +1,6 @@
 
 const KpiConfig = require('../models/KpiConfig');
 const { getClientConfig } = require('../utils/clientLoader');
-const connectToMongo = require('../config/runtime-db');
 
 /**
  * @desc    Get all admin configurations for a client
@@ -11,10 +10,6 @@ const connectToMongo = require('../config/runtime-db');
 exports.getAllConfigs = async (req, res) => {
   try {
     const { clientId } = req.query;
-    const mongoUri = req.headers['x-mongo-uri'];
-
-    // Connect to MongoDB with the provided URI
-    await connectToMongo(mongoUri);
 
     if (!clientId) {
       return res.status(400).json({ success: false, error: 'Client ID is required' });
@@ -53,10 +48,6 @@ exports.getConfigByName = async (req, res) => {
   try {
     const { adminName } = req.params;
     const { clientId } = req.query;
-    const mongoUri = req.headers['x-mongo-uri'];
-
-    // Connect to MongoDB with the provided URI
-    await connectToMongo(mongoUri);
 
     if (!clientId) {
       return res.status(400).json({ success: false, error: 'Client ID is required' });
@@ -100,10 +91,6 @@ exports.getConfigByName = async (req, res) => {
 exports.saveConfig = async (req, res) => {
   try {
     const { clientId, adminName } = req.body;
-    const mongoUri = req.headers['x-mongo-uri'];
-
-    // Connect to MongoDB with the provided URI
-    await connectToMongo(mongoUri);
 
     if (!clientId) {
       return res.status(400).json({ success: false, error: 'Client ID is required' });
