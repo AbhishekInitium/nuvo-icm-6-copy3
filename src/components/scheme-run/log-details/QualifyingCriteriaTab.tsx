@@ -23,7 +23,7 @@ export function QualifyingCriteriaTab({ agent }: QualifyingCriteriaTabProps) {
             <TableRow key={idx}>
               <TableCell>{criteria.rule}</TableCell>
               <TableCell>
-                <Badge variant={criteria.result ? 'success' : 'destructive'} className={criteria.result ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                <Badge variant={criteria.result ? 'success' : 'destructive'}>
                   {criteria.result ? 'Passed' : 'Failed'}
                 </Badge>
               </TableCell>

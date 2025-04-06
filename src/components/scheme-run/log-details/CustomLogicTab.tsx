@@ -27,7 +27,7 @@ export function CustomLogicTab({ agent }: CustomLogicTabProps) {
             <TableRow key={idx}>
               <TableCell>{logic.rule}</TableCell>
               <TableCell>
-                <Badge variant={logic.result ? 'success' : 'destructive'} className={logic.result ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                <Badge variant={logic.result ? 'success' : 'destructive'}>
                   {logic.result ? 'Passed' : 'Failed'}
                 </Badge>
               </TableCell>

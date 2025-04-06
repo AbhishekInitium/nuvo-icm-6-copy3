@@ -30,11 +30,11 @@ export function SchemeList({
       case 'Draft':
         return <Badge variant="outline">Draft</Badge>;
       case 'Approved':
-        return <Badge variant="success" className="bg-green-100 text-green-800">Approved</Badge>;
+        return <Badge variant="success">Approved</Badge>;
       case 'Simulated':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Simulated</Badge>;
+        return <Badge variant="secondary">Simulated</Badge>;
       case 'ProdRun':
-        return <Badge variant="destructive" className="bg-purple-100 text-purple-800">Production Run</Badge>;
+        return <Badge variant="default">Production Run</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
