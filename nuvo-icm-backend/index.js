@@ -16,7 +16,7 @@ const devRoutesSetup = require('./routes/devRoutes');
 // Initialize Express
 const app = express();
 
-// Connect to MongoDB
+// Connect to MongoDB (just the master database for MasterConfig)
 console.log(`MongoDB URI loaded: ${process.env.MONGODB_URI ? 'Yes (URI value hidden for security)' : 'No'}`);
 connectDB();
 

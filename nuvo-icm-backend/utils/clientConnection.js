@@ -34,6 +34,7 @@ async function connectClientDb(clientId) {
 
   try {
     // Create a new connection to the client's MongoDB
+    console.log(`[MongoDB] Connecting to MongoDB for client: ${clientId}`);
     const conn = await mongoose.createConnection(config.mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true
@@ -52,6 +53,7 @@ async function connectClientDb(clientId) {
 
     // Cache the connection
     cachedConnections[clientId] = conn;
+    console.log(`[MongoDB] Connected to MongoDB for client: ${clientId}`);
     
     return conn;
   } catch (error) {
