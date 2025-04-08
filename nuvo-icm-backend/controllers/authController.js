@@ -22,11 +22,19 @@ exports.login = async (req, res) => {
     // Check MongoDB connection
     if (mongoose.connection.readyState !== 1) {
       console.error('MongoDB not connected. Current state:', mongoose.connection.readyState);
-      await mongoose.connect(process.env.MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      console.log('MongoDB connected during login');
+      try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+        });
+        console.log('MongoDB connected during login');
+      } catch (connectionError) {
+        console.error('Failed to connect to MongoDB:', connectionError);
+        return res.status(500).json({
+          success: false,
+          error: 'Database connection failed'
+        });
+      }
     }
 
     // Find user in the users collection
