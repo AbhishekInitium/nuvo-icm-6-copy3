@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { loginUser } from "@/api/auth";
 
 // Define user roles
 export type UserRole = "Admin" | "Manager" | "Agent" | "Finance";
@@ -14,9 +15,11 @@ interface AuthUser {
 // Define auth context interface
 interface AuthContextType {
   user: AuthUser | null;
-  login: (username: string, role: UserRole, clientId: string) => void;
+  login: (username: string, role: UserRole, clientId: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Create the auth context
@@ -30,6 +33,8 @@ interface AuthProviderProps {
 // Auth provider component
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Check for existing user on mount
   useEffect(() => {
@@ -39,11 +44,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  // Login function
-  const login = (username: string, role: UserRole, clientId: string) => {
-    const authUser = { username, role, clientId };
-    localStorage.setItem("auth_user", JSON.stringify(authUser));
-    setUser(authUser);
+  // Login function with MongoDB authentication
+  const login = async (username: string, role: UserRole, clientId: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await loginUser({ username, role, clientId });
+      
+      if (response.success && response.user) {
+        // Store user data and set state
+        localStorage.setItem("auth_user", JSON.stringify(response.user));
+        setUser(response.user);
+        setIsLoading(false);
+        return true;
+      } else {
+        // Set error message
+        setError(response.error || response.message || "Authentication failed");
+        setIsLoading(false);
+        return false;
+      }
+    } catch (err) {
+      setError("Authentication service unavailable");
+      setIsLoading(false);
+      return false;
+    }
   };
 
   // Logout function
@@ -58,6 +83,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     logout,
     isAuthenticated: !!user,
+    isLoading,
+    error
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

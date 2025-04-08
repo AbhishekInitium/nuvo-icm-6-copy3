@@ -11,6 +11,7 @@ const agentRoutes = require('./routes/agentRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
 const opsRoutes = require('./routes/opsRoutes');
 const systemRoutes = require('./routes/systemRoutes');
+const authRoutes = require('./routes/authRoutes');
 const devRoutesSetup = require('./routes/devRoutes');
 
 // Initialize Express
@@ -25,6 +26,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api', healthRoutes);
+app.use('/api/auth', authRoutes);
 
 // System configuration routes (before checkMongoHealth to allow setting up the DB)
 app.use('/api/system', systemRoutes);

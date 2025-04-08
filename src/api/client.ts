@@ -11,14 +11,17 @@ export const apiClient = axios.create({
 
 // Request interceptor for adding client ID
 apiClient.interceptors.request.use((config) => {
-  // Mock client ID for now
-  const clientId = 'client_001';
+  // Get stored user data from localStorage if available
+  const storedUser = localStorage.getItem("auth_user");
+  const clientId = storedUser ? JSON.parse(storedUser).clientId : null;
   
-  // Add client ID to all requests
-  if (config.url?.includes('?')) {
-    config.url = `${config.url}&clientId=${clientId}`;
-  } else {
-    config.url = `${config.url}?clientId=${clientId}`;
+  // Add client ID to all requests if available
+  if (clientId) {
+    if (config.url?.includes('?')) {
+      config.url = `${config.url}&clientId=${clientId}`;
+    } else {
+      config.url = `${config.url}?clientId=${clientId}`;
+    }
   }
   
   return config;

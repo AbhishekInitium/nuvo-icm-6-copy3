@@ -7,35 +7,40 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 // Mock client IDs
-const MOCK_CLIENT_IDS = ["ACME-001", "Globex-002", "Initech-003", "Umbrella-004", "Cyberdyne-005"];
+const MOCK_CLIENT_IDS = ["NUVO_01", "Globex-002", "Initech-003", "Umbrella-004", "Cyberdyne-005"];
 
 export default function Login() {
-  const { isAuthenticated, login, user } = useAuth();
+  const { isAuthenticated, login, user, isLoading, error } = useAuth();
+  const { toast } = useToast();
   const [username, setUsername] = useState("");
   const [role, setRole] = useState<UserRole>("Manager");
   const [clientId, setClientId] = useState(MOCK_CLIENT_IDS[0]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    // Simulate API delay
-    setTimeout(() => {
-      login(username, role, clientId);
-      setIsSubmitting(false);
-    }, 500);
+    const success = await login(username, role, clientId);
+    
+    if (!success && error) {
+      toast({
+        title: "Authentication Failed",
+        description: error,
+        variant: "destructive",
+      });
+    }
   };
 
   // Redirect if user is already authenticated
   if (isAuthenticated) {
     // Redirect based on role
     if (user?.role === "Admin") return <Navigate to="/kpi-configurator" replace />;
-    if (user?.role === "Manager") return <Navigate to="/schemes" replace />;
     if (user?.role === "Agent") return <Navigate to="/agent-dashboard" replace />;
+    if (user?.role === "Finance") return <Navigate to="/finance-ops" replace />;
+    return <Navigate to="/schemes" replace />;
   }
 
   return (
@@ -73,6 +78,7 @@ export default function Login() {
                   <SelectItem value="Admin">Administrator</SelectItem>
                   <SelectItem value="Manager">Manager</SelectItem>
                   <SelectItem value="Agent">Agent</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -101,9 +107,9 @@ export default function Login() {
           <Button 
             className="w-full" 
             onClick={handleSubmit}
-            disabled={isSubmitting || !username}
+            disabled={isLoading || !username}
           >
-            {isSubmitting ? "Signing in..." : "Sign In"}
+            {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </CardFooter>
       </Card>
