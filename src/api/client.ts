@@ -24,7 +24,6 @@ apiClient.interceptors.request.use(
     const clientId = storedUser ? JSON.parse(storedUser).clientId : null;
     
     // Only add client ID to non-auth requests
-    // This prevents adding clientId to login requests which should be validated from the request body
     if (clientId && !config.url?.includes('/auth/')) {
       if (config.url?.includes('?')) {
         config.url = `${config.url}&clientId=${clientId}`;

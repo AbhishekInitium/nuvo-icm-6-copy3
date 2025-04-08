@@ -10,11 +10,8 @@ exports.login = async (req, res) => {
   const { username, role, clientId } = req.body;
 
   console.log('Login attempt:', { username, role, clientId });
-  console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Is set (value hidden)' : 'Not set');
-  console.log('Current MongoDB connection state:', mongoose.connection.readyState);
 
   if (!username || !role || !clientId) {
-    console.log('Missing required fields:', { username, role, clientId });
     return res.status(400).json({
       success: false,
       error: 'Please provide username, role and clientId'
@@ -22,62 +19,33 @@ exports.login = async (req, res) => {
   }
 
   try {
-    // Connect to the main MongoDB database (not client-specific)
-    const db = mongoose.connection;
-    
-    // Check connection status
-    if (db.readyState !== 1) {
-      console.error('MongoDB not connected. Current state:', db.readyState);
-      return res.status(500).json({
-        success: false,
-        error: 'Database connection not established'
+    // Check MongoDB connection
+    if (mongoose.connection.readyState !== 1) {
+      console.error('MongoDB not connected. Current state:', mongoose.connection.readyState);
+      await mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
       });
+      console.log('MongoDB connected during login');
     }
 
-    // Get the users collection
-    const usersCollection = db.collection('users');
+    // Find user in the users collection
+    const user = await mongoose.connection.db.collection('users').findOne({ 
+      username: username,
+      role: role,
+      clientId: clientId
+    });
     
-    console.log('Searching for user:', username);
-    
-    // Find user by username
-    const user = await usersCollection.findOne({ username });
-    
-    console.log('User found in DB:', user ? 'Yes' : 'No');
-    if (user) {
-      console.log('Found user data (excluding sensitive fields):', {
-        username: user.username,
-        role: user.role,
-        clientId: user.clientId
-      });
-    }
+    console.log('User lookup result:', user ? 'Found' : 'Not found');
     
     if (!user) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid username or role'
-      });
-    }
-    
-    // Check if role matches
-    console.log('Checking role:', { userRole: user.role, providedRole: role });
-    if (user.role !== role) {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid role for this user'
-      });
-    }
-    
-    // Check if client ID matches
-    console.log('Checking clientId:', { userClientId: user.clientId, providedClientId: clientId });
-    if (user.clientId !== clientId) {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid client ID for this user'
+        error: 'Invalid credentials'
       });
     }
     
     // Authentication successful
-    console.log('Authentication successful for user:', username);
     return res.status(200).json({
       success: true,
       user: {
