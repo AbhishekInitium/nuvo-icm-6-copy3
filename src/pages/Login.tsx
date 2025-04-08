@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,8 +13,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Client IDs from the database will replace these mock values
-const MOCK_CLIENT_IDS = ["ACME-001", "Globex-002", "Initech-003", "Umbrella-004", "Cyberdyne-005"];
+// Updated client IDs to match backend
+const CLIENT_IDS = ["NUVO_01"];
 
 // Login form schema
 const loginSchema = z.object({
@@ -36,7 +36,7 @@ export default function Login() {
     defaultValues: {
       username: "",
       password: "",
-      clientId: MOCK_CLIENT_IDS[0],
+      clientId: CLIENT_IDS[0],
       role: "Manager" as UserRole
     }
   });
@@ -163,7 +163,7 @@ export default function Login() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {MOCK_CLIENT_IDS.map((id) => (
+                        {CLIENT_IDS.map((id) => (
                           <SelectItem key={id} value={id}>
                             {id}
                           </SelectItem>

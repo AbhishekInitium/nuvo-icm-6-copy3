@@ -51,11 +51,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // For MongoDB validation path
       const response = await authApi.login(username, password, clientId);
       
+      // Validate role from server matches provided role
+      if (response.user.role !== role) {
+        toast({
+          title: "Login Failed",
+          description: "Role mismatch. Please select the correct role.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return false;
+      }
+      
       // If we get here, authentication was successful
       const authUser = { 
-        username, 
-        role: response.role || role, // Use role from server if available
-        clientId 
+        username: response.user.username, 
+        role: response.user.role, 
+        clientId: response.user.clientId
       };
       
       localStorage.setItem("auth_user", JSON.stringify(authUser));

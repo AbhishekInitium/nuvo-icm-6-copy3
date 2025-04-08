@@ -3,7 +3,49 @@ const express = require('express');
 const router = express.Router();
 const { connectClientDb } = require('../utils/clientConnection');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const UserSchema = require('../models/UserSchema');
+
+// Seed initial users for testing/development
+async function seedUsers(User) {
+  const users = [
+    {
+      username: 'admin_user',
+      password: 'admin123',
+      role: 'Admin',
+      clientId: 'NUVO_01'
+    },
+    {
+      username: 'manager_user',
+      password: 'manager123',
+      role: 'Manager',
+      clientId: 'NUVO_01'
+    },
+    {
+      username: 'agent_user',
+      password: 'agent123',
+      role: 'Agent',
+      clientId: 'NUVO_01'
+    },
+    {
+      username: 'finance_user',
+      password: 'finance123',
+      role: 'Finance',
+      clientId: 'NUVO_01'
+    }
+  ];
+
+  for (const userData of users) {
+    const existingUser = await User.findOne({ 
+      username: userData.username, 
+      clientId: userData.clientId 
+    });
+
+    if (!existingUser) {
+      await User.create(userData);
+      console.log(`Seeded user: ${userData.username}`);
+    }
+  }
+}
 
 // Login route
 router.post('/login', async (req, res) => {
@@ -22,29 +64,17 @@ router.post('/login', async (req, res) => {
     
     // Check if User model exists for this client
     if (!clientDb.models.User) {
-      // Create User schema if it doesn't exist
-      const UserSchema = new mongoose.Schema({
-        username: { type: String, required: true, unique: true },
-        password: { type: String, required: true },
-        role: { 
-          type: String, 
-          enum: ['Admin', 'Manager', 'Agent', 'Finance'],
-          default: 'Manager'
-        },
-        clientId: { type: String, required: true },
-        email: { type: String },
-        fullName: { type: String },
-        active: { type: Boolean, default: true }
-      });
-      
       clientDb.model('User', UserSchema);
     }
     
     // Get User model for this client connection
     const User = clientDb.model('User');
     
+    // Ensure users are seeded for initial setup
+    await seedUsers(User);
+    
     // Find user
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username, clientId });
     
     // If user doesn't exist
     if (!user) {
@@ -54,9 +84,8 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    // Check if password matches (using plain comparison for now)
-    // In a production environment, this should use bcrypt.compare
-    const isMatch = user.password === password;
+    // Check password
+    const isMatch = await user.comparePassword(password);
     
     if (!isMatch) {
       return res.status(401).json({ 
@@ -79,9 +108,7 @@ router.post('/login', async (req, res) => {
       user: {
         username: user.username,
         role: user.role,
-        clientId: user.clientId,
-        email: user.email,
-        fullName: user.fullName
+        clientId: user.clientId
       }
     });
     
