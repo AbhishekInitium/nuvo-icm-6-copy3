@@ -37,12 +37,30 @@ exports.testConnection = async (req, res) => {
     try {
       // Create a new Mongoose connection to test
       console.log('[MongoDB Test] Creating test connection...');
-      testConnection = await mongoose.createConnection(mongoUri, {
+      testConnection = mongoose.createConnection(mongoUri, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         serverSelectionTimeoutMS: 5000, // 5 seconds timeout for connection test
         connectTimeoutMS: 5000,         // Connection timeout
         socketTimeoutMS: 5000           // Socket timeout
+      });
+      
+      // Wait for the connection to be established
+      await new Promise((resolve, reject) => {
+        testConnection.once('connected', () => {
+          console.log('[MongoDB Test] Connection established successfully');
+          resolve();
+        });
+        
+        testConnection.once('error', (err) => {
+          console.error('[MongoDB Test] Connection failed with error:', err);
+          reject(err);
+        });
+        
+        // Set a timeout in case neither event fires
+        setTimeout(() => {
+          reject(new Error('Connection timeout - neither connected nor error event fired'));
+        }, 5000);
       });
       
       // Verify that the connection is actually working by running a command
