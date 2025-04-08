@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Base axios instance
 export const apiClient = axios.create({
-  baseURL: '/api', // Using relative path for proxy to localhost:3000
+  baseURL: 'http://localhost:3001/api', // Updated base URL
   headers: {
     'Content-Type': 'application/json',
   },
