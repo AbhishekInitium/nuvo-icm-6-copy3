@@ -22,7 +22,6 @@ interface AuthResponse {
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   try {
     console.log('Attempting login with credentials:', credentials);
-    console.log('API client baseURL:', apiClient.defaults.baseURL);
     
     // Use expanded error handling
     const response = await apiClient.post('/auth/login', credentials);
