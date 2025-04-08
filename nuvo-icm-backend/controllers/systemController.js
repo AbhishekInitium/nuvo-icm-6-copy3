@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 const { MongoClient } = require('mongodb');
 const SystemConfig = require('../models/SystemConfig');
@@ -20,11 +21,29 @@ exports.testConnection = async (req, res) => {
       });
     }
 
-    console.log(`[MongoDB Test] Testing connection to MongoDB URI: ${mongoUri.replace(/mongodb(\+srv)?:\/\/([^:]+):([^@]+)@/, 'mongodb$1://$2:***@')}`);
+    // Mask sensitive info when logging
+    const maskedUri = mongoUri.replace(/mongodb(\+srv)?:\/\/([^:]+):([^@]+)@/, 'mongodb$1://$2:***@');
+    console.log(`[MongoDB Test] Testing connection to MongoDB URI: ${maskedUri}`);
 
     // Test connection using the MongoDB native driver
     let client;
     try {
+      // Validate the URI format first
+      if (!mongoUri.match(/^mongodb(\+srv)?:\/\//)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid MongoDB URI format. URI must start with mongodb:// or mongodb+srv://'
+        });
+      }
+
+      // Check for common URI format issues
+      if (mongoUri.includes('@.')) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid MongoDB URI format: missing cluster name after the @ symbol'
+        });
+      }
+
       // Create a new MongoDB client to test
       console.log('[MongoDB Test] Creating test connection...');
       client = new MongoClient(mongoUri, {
@@ -34,7 +53,9 @@ exports.testConnection = async (req, res) => {
       
       // Attempt to connect
       await client.connect();
-      console.log('[MongoDB Test] Connected successfully to server');
+      console.log(`[MongoDB Test] Connected successfully to server: ${client.s?.url?.hostname || 'unknown'}:${client.s?.url?.port || 'unknown'}`);
+      console.log(`[MongoDB Test] Database name: ${client.s?.options?.dbName || 'unknown'}`);
+      console.log(`[MongoDB Test] Connection state: ${client.topology?.s?.state || 'unknown'}`);
       
       // Test if we can ping the database
       await client.db("admin").command({ ping: 1 });
@@ -62,7 +83,9 @@ exports.testConnection = async (req, res) => {
       // Generate more detailed error message depending on error type
       let detailedError = 'Could not connect to MongoDB.';
       
-      if (connectionError.name === 'MongoServerSelectionError') {
+      if (connectionError.code === 'EBADNAME') {
+        detailedError = 'Invalid hostname format in MongoDB URI. Check if the cluster name is missing after the @ symbol.';
+      } else if (connectionError.name === 'MongoServerSelectionError') {
         detailedError = 'Could not reach MongoDB server. Check if the server address is correct and accessible.';
       } else if (connectionError.name === 'MongoParseError') {
         detailedError = 'MongoDB connection string format is invalid. Please check the URI format.';
@@ -81,8 +104,12 @@ exports.testConnection = async (req, res) => {
     } finally {
       // Ensure the connection is closed
       if (client) {
-        await client.close();
-        console.log('[MongoDB Test] Test connection closed');
+        try {
+          await client.close();
+          console.log('[MongoDB Test] Test connection closed successfully');
+        } catch (closeError) {
+          console.error('[MongoDB Test] Error closing test connection:', closeError);
+        }
       }
     }
   } catch (error) {

@@ -1,3 +1,4 @@
+
 import { apiClient } from './client';
 
 export interface SystemConfigInput {
@@ -59,6 +60,22 @@ export interface ConnectionStatusResponse {
  */
 export const testConnection = async (mongoUri: string): Promise<ConnectionTestResponse> => {
   try {
+    // Simple client-side validation of MongoDB URI format
+    if (!mongoUri.match(/^mongodb(\+srv)?:\/\//)) {
+      return { 
+        success: false, 
+        error: 'Invalid MongoDB URI format. URI must start with mongodb:// or mongodb+srv://'
+      };
+    }
+
+    // Check for common formatting errors
+    if (mongoUri.includes('@.')) {
+      return { 
+        success: false, 
+        error: 'Invalid MongoDB URI format: missing cluster name after the @ symbol'
+      };
+    }
+
     const response = await apiClient.post('/system/test-connection', { mongoUri });
     return response.data;
   } catch (error: any) {
