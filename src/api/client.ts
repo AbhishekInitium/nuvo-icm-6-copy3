@@ -7,6 +7,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // Add timeout to prevent hanging requests
 });
 
 // Add request interceptor for debugging
@@ -18,7 +19,7 @@ apiClient.interceptors.request.use(
       data: config.data,
       headers: config.headers,
       baseURL: config.baseURL,
-      fullURL: config.baseURL + config.url
+      fullURL: `${config.baseURL}${config.url}`
     });
     
     // Get stored user data from localStorage if available
@@ -61,7 +62,7 @@ apiClient.interceptors.response.use(
       status: error.response?.status,
       data: error.response?.data,
       baseURL: error.config?.baseURL,
-      fullURL: error.config?.baseURL + error.config?.url
+      fullURL: `${error.config?.baseURL}${error.config?.url}`
     });
     return Promise.reject(error);
   }
