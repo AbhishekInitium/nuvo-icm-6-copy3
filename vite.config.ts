@@ -1,15 +1,15 @@
 
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'  // Changed back to react-swc
+import react from '@vitejs/plugin-react-swc'
 import path from 'path'
-import { componentTagger } from "lovable-tagger"  // Added back
+import { componentTagger } from "lovable-tagger"
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   base: "/",
   server: {
-    host: "::",  // Restored host setting
-    port: 8080,  // Maintained port setting
+    host: "::",
+    port: 8080,
     proxy: {
       "/api": {
         target: "http://localhost:3000",
