@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
 const MasterConfig = require('../models/MasterConfig');
@@ -38,10 +37,10 @@ exports.testConnection = async (req, res) => {
       // Create a new Mongoose connection to test
       console.log('[MongoDB Test] Creating test connection...');
       testConnection = mongoose.createConnection();
-
+      
       // Use a promise to track connection status with timeout
       const connectionResult = await Promise.race([
-        // Connection attempt
+        // Connection attempt with proper event handling
         new Promise((resolve, reject) => {
           // Set up event handlers before initiating connection
           testConnection.once('connected', () => {
@@ -61,6 +60,11 @@ exports.testConnection = async (req, res) => {
             serverSelectionTimeoutMS: 5000,
             connectTimeoutMS: 5000,
             socketTimeoutMS: 5000
+          }).catch(err => {
+            // This catch is critical - it handles errors in the openUri promise
+            // without letting them bubble up to crash the server
+            console.error('[MongoDB Test] openUri promise rejected:', err);
+            reject(err);
           });
         }),
         
@@ -70,53 +74,58 @@ exports.testConnection = async (req, res) => {
             reject(new Error('Connection timeout - took too long to establish connection'));
           }, 7000); // Slightly longer than the server selection timeout
         })
-      ]);
+      ]).catch(error => {
+        // This catch block is critical - it ensures the Promise.race doesn't throw uncaught errors
+        console.error('[MongoDB Test] Connection attempt failed:', error);
+        throw error; // Re-throw to be caught by the outer try-catch
+      });
       
-      // If we get here, connection was successful
-      console.log(`[MongoDB Test] Connection state: ${testConnection.readyState}`);
-      
-      // Verify that the connection is actually working by running a command
-      try {
-        // Only proceed if connection and database are available
-        if (testConnection && testConnection.db) {
+      // If we reach here and have a connected state, attempt ping
+      if (testConnection.readyState === 1) {
+        console.log(`[MongoDB Test] Connection state: ${testConnection.readyState}`);
+        
+        try {
           // Try to run the ping command to ensure the connection is fully established
-          await testConnection.db.admin().command({ ping: 1 });
-          
-          // Log connection information
-          console.log(`[MongoDB Test] Successfully connected to: ${testConnection.host || 'unknown'}:${testConnection.port || 'unknown'}`);
-          console.log(`[MongoDB Test] Database name: ${testConnection.name || 'unknown'}`);
-          
-          // Close the test connection
-          if (testConnection) {
-            await testConnection.close(true);
+          // Only if we actually have a database object
+          if (testConnection && testConnection.db) {
+            await testConnection.db.admin().command({ ping: 1 });
+            
+            // Log connection information
+            console.log(`[MongoDB Test] Successfully connected to: ${testConnection.host || 'unknown'}:${testConnection.port || 'unknown'}`);
+            console.log(`[MongoDB Test] Database name: ${testConnection.name || 'unknown'}`);
+            
+            // Close the test connection
+            await testConnection.close();
             console.log(`[MongoDB Test] Test connection closed successfully`);
+            
+            return res.status(200).json({
+              success: true,
+              message: 'Connection successful',
+            });
+          } else {
+            throw new Error('Connection object or database not available');
+          }
+        } catch (pingError) {
+          // Failed to ping the database even though connection was established
+          console.error('[MongoDB Test] Database ping failed:', pingError);
+          
+          // Try to close the connection if it exists
+          if (testConnection) {
+            try {
+              await testConnection.close();
+              console.log('[MongoDB Test] Connection closed after ping failure');
+            } catch (closeError) {
+              console.error('[MongoDB Test] Error closing connection:', closeError);
+            }
           }
           
-          return res.status(200).json({
-            success: true,
-            message: 'Connection successful',
+          return res.status(400).json({
+            success: false,
+            error: `Database connection established but failed to verify: ${pingError.message}`
           });
-        } else {
-          throw new Error('Connection object or database not available');
         }
-      } catch (pingError) {
-        // Failed to ping the database even though connection was established
-        console.error('[MongoDB Test] Database ping failed:', pingError);
-        
-        // Try to close the connection if it exists
-        if (testConnection) {
-          try {
-            await testConnection.close(true);
-            console.log('[MongoDB Test] Connection closed after ping failure');
-          } catch (closeError) {
-            console.error('[MongoDB Test] Error closing connection:', closeError);
-          }
-        }
-        
-        return res.status(400).json({
-          success: false,
-          error: `Database connection established but failed to verify: ${pingError.message}`
-        });
+      } else {
+        throw new Error('Connection state is not connected');
       }
     } catch (connectionError) {
       console.error('[MongoDB Test] Connection test failed with error:');
@@ -129,6 +138,7 @@ exports.testConnection = async (req, res) => {
           console.log('[MongoDB Test] Connection closed after error');
         } catch (closeError) {
           console.error('[MongoDB Test] Error closing connection:', closeError);
+          // Don't throw this error, just log it
         }
       }
       
@@ -180,10 +190,14 @@ exports.testConnection = async (req, res) => {
     }
   } catch (error) {
     console.error('[MongoDB Test] Unexpected error during connection test:', error);
-    return res.status(500).json({
-      success: false,
-      error: `Server Error: ${error.message}`
-    });
+    
+    // Ensure that the response is sent
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        error: `Server Error: ${error.message}`
+      });
+    }
   }
 };
 
