@@ -16,7 +16,9 @@ apiClient.interceptors.request.use(
       url: config.url,
       method: config.method,
       data: config.data,
-      headers: config.headers
+      headers: config.headers,
+      baseURL: config.baseURL,
+      fullURL: config.baseURL + config.url
     });
     
     // Get stored user data from localStorage if available
@@ -57,7 +59,9 @@ apiClient.interceptors.response.use(
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
-      data: error.response?.data
+      data: error.response?.data,
+      baseURL: error.config?.baseURL,
+      fullURL: error.config?.baseURL + error.config?.url
     });
     return Promise.reject(error);
   }
