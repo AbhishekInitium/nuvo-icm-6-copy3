@@ -1,3 +1,4 @@
+
 import { apiClient } from './client';
 
 export interface SystemConfigInput {
@@ -67,12 +68,22 @@ export const testConnection = async (mongoUri: string): Promise<ConnectionTestRe
       };
     }
     
-    // Validate MongoDB URI format
-    const uriPattern = /^mongodb(\+srv)?:\/\/([^:]+):([^@]+)@([^\/]+)\/([^?]+)/;
+    // Enhanced MongoDB URI format validation
+    // This regex checks for mongodb:// or mongodb+srv:// followed by something before the first / (credentials and host)
+    // then a database name (non-empty) followed by optional query parameters
+    const uriPattern = /^mongodb(\+srv)?:\/\/[^\/]+\/[^?]+(\/|\?|$)/;
     if (!uriPattern.test(mongoUri)) {
       return {
         success: false,
         error: 'Invalid MongoDB URI format. Required format: mongodb[+srv]://username:password@host/database'
+      };
+    }
+    
+    // Check for common Atlas connection string errors
+    if (mongoUri.includes('@.') || mongoUri.includes('@/')) {
+      return {
+        success: false,
+        error: 'Invalid MongoDB URI: Missing hostname or incorrect format after the @ symbol'
       };
     }
     
