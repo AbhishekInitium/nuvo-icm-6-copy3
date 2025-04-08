@@ -54,23 +54,6 @@ exports.login = async (req, res) => {
       }
     }
 
-    // Mock authentication for testing in Lovable environment
-    console.log('Using mock authentication for testing in Lovable environment');
-    
-    // Return a successful response with mock user data
-    return res.status(200).json({
-      success: true,
-      user: {
-        username: username.trim(),
-        role: role.trim(),
-        clientId: clientId.trim()
-      },
-      message: 'Authentication successful (Mock)'
-    });
-    
-    /* 
-    // Uncomment this section for real MongoDB authentication when database is properly configured
-    
     // Find user in the users collection with trimmed values
     console.log('Looking up user with criteria:', { 
       username: username.trim(), 
@@ -102,7 +85,6 @@ exports.login = async (req, res) => {
       },
       message: 'Authentication successful'
     });
-    */
   } catch (error) {
     console.error('Authentication error:', error);
     return res.status(500).json({
