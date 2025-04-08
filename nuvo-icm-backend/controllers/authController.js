@@ -10,6 +10,8 @@ exports.login = async (req, res) => {
   const { username, role, clientId } = req.body;
 
   console.log('Login attempt:', { username, role, clientId });
+  console.log('MongoDB Connection State:', mongoose.connection.readyState);
+  console.log('MongoDB URI Environment Variable:', process.env.MONGODB_URI ? 'Exists (value hidden)' : 'Missing');
 
   if (!username || !role || !clientId) {
     return res.status(400).json({
@@ -23,11 +25,26 @@ exports.login = async (req, res) => {
     if (mongoose.connection.readyState !== 1) {
       console.error('MongoDB not connected. Current state:', mongoose.connection.readyState);
       try {
-        await mongoose.connect(process.env.MONGODB_URI, {
+        console.log('Attempting to connect to MongoDB during login...');
+        const mongoURI = process.env.MONGODB_URI;
+        if (!mongoURI) {
+          console.error('MONGODB_URI environment variable is not set!');
+          return res.status(500).json({
+            success: false,
+            error: 'Database configuration missing'
+          });
+        }
+
+        // Log sanitized URI (hide password)
+        const sanitizedURI = mongoURI.replace(/mongodb(\+srv)?:\/\/([^:]+):([^@]+)@/, 'mongodb$1://$2:***@');
+        console.log('Connecting to MongoDB with URI:', sanitizedURI);
+        
+        // Connect with options
+        await mongoose.connect(mongoURI, {
           useNewUrlParser: true,
           useUnifiedTopology: true,
         });
-        console.log('MongoDB connected during login');
+        console.log('MongoDB connected successfully during login');
       } catch (connectionError) {
         console.error('Failed to connect to MongoDB:', connectionError);
         return res.status(500).json({
@@ -38,6 +55,7 @@ exports.login = async (req, res) => {
     }
 
     // Find user in the users collection
+    console.log('Looking up user with criteria:', { username, role, clientId });
     const user = await mongoose.connection.db.collection('users').findOne({ 
       username: username,
       role: role,
