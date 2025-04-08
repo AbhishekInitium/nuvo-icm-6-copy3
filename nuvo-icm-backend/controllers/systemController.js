@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { MongoClient } = require('mongodb');
 const SystemConfig = require('../models/SystemConfig');
 const MasterConfig = require('../models/MasterConfig');
 const { connectClientDb, closeClientConnection } = require('../utils/clientConnection');
@@ -21,24 +22,23 @@ exports.testConnection = async (req, res) => {
 
     console.log(`[MongoDB Test] Testing connection to MongoDB URI: ${mongoUri.replace(/mongodb(\+srv)?:\/\/([^:]+):([^@]+)@/, 'mongodb$1://$2:***@')}`);
 
-    // Test connection to the provided MongoDB URI
+    // Test connection using the MongoDB native driver
+    let client;
     try {
-      // Create a new Mongoose connection to test
+      // Create a new MongoDB client to test
       console.log('[MongoDB Test] Creating test connection...');
-      const testConnection = await mongoose.createConnection(mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000 // 5 seconds timeout for connection test
+      client = new MongoClient(mongoUri, {
+        serverSelectionTimeoutMS: 5000, // 5 seconds timeout for connection test
+        connectTimeoutMS: 5000
       });
       
-      // Log connection information
-      console.log(`[MongoDB Test] Successfully connected to: ${testConnection.host}:${testConnection.port}`);
-      console.log(`[MongoDB Test] Database name: ${testConnection.name}`);
-      console.log(`[MongoDB Test] Connection state: ${testConnection.readyState}`);
+      // Attempt to connect
+      await client.connect();
+      console.log('[MongoDB Test] Connected successfully to server');
       
-      // Close the test connection
-      await testConnection.close();
-      console.log(`[MongoDB Test] Test connection closed successfully`);
+      // Test if we can ping the database
+      await client.db("admin").command({ ping: 1 });
+      console.log('[MongoDB Test] Pinged deployment. Connection is valid.');
       
       return res.status(200).json({
         success: true,
@@ -58,34 +58,32 @@ exports.testConnection = async (req, res) => {
       if (connectionError.message) {
         console.error(`[MongoDB Test] Error message: ${connectionError.message}`);
       }
-      if (connectionError.stack) {
-        console.error(`[MongoDB Test] Stack trace: ${connectionError.stack}`);
-      }
       
       // Generate more detailed error message depending on error type
       let detailedError = 'Could not connect to MongoDB.';
       
       if (connectionError.name === 'MongoServerSelectionError') {
         detailedError = 'Could not reach MongoDB server. Check if the server address is correct and accessible.';
-        console.error('[MongoDB Test] Server selection timeout - could not find MongoDB server.');
       } else if (connectionError.name === 'MongoParseError') {
         detailedError = 'MongoDB connection string format is invalid. Please check the URI format.';
-        console.error('[MongoDB Test] Connection string format is invalid.');
       } else if (connectionError.message && connectionError.message.includes('Authentication failed')) {
         detailedError = 'Authentication failed. Please verify username and password in your connection string.';
-        console.error('[MongoDB Test] Authentication failed - username or password incorrect.');
       } else if (connectionError.message && connectionError.message.includes('ENOTFOUND')) {
         detailedError = 'Host not found. Please check if the MongoDB server hostname is correct.';
-        console.error('[MongoDB Test] Host not found - invalid hostname.');
       } else if (connectionError.message && connectionError.message.includes('ECONNREFUSED')) {
         detailedError = 'Connection refused. MongoDB server may not be running or port may be blocked.';
-        console.error('[MongoDB Test] Connection refused - server not responding on specified port.');
       }
       
       return res.status(400).json({ 
         success: false, 
         error: `${detailedError} Original error: ${connectionError.message}` 
       });
+    } finally {
+      // Ensure the connection is closed
+      if (client) {
+        await client.close();
+        console.log('[MongoDB Test] Test connection closed');
+      }
     }
   } catch (error) {
     console.error('[MongoDB Test] Unexpected error during connection test:', error);

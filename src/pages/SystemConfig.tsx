@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -108,6 +109,8 @@ export function SystemConfig() {
     try {
       setTestingConnection(true);
       setErrorDetails(null);
+      setConnectionStatus('untested'); // Reset status before testing
+      
       const mongoUri = setupForm.getValues('mongoUri');
       
       const response = await testConnection(mongoUri);
@@ -121,7 +124,11 @@ export function SystemConfig() {
       } else {
         setConnectionStatus('failed');
         setErrorDetails(response.error || "Failed to connect to MongoDB");
-        throw new Error(response.error || "Failed to connect to MongoDB");
+        toast({
+          title: "Connection Failed",
+          description: "MongoDB connection test failed. See details below.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       setConnectionStatus('failed');

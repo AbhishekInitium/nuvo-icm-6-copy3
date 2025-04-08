@@ -1,4 +1,3 @@
-
 import { apiClient } from './client';
 
 export interface SystemConfigInput {
@@ -62,11 +61,17 @@ export const testConnection = async (mongoUri: string): Promise<ConnectionTestRe
   try {
     const response = await apiClient.post('/system/test-connection', { mongoUri });
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('API Error during connection test:', error);
+    
+    // Extract error message from response if available
+    const errorMessage = error.response?.data?.error || 
+                         error.message || 
+                         'Connection test failed: Network error';
+    
     return { 
       success: false, 
-      error: error.response?.data?.error || error.message || 'Connection test failed: Network error'
+      error: errorMessage
     };
   }
 };
