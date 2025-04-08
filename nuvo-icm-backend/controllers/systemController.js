@@ -37,56 +37,68 @@ exports.testConnection = async (req, res) => {
     try {
       // Create a new Mongoose connection to test
       console.log('[MongoDB Test] Creating test connection...');
-      testConnection = mongoose.createConnection(mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000, // 5 seconds timeout for connection test
-        connectTimeoutMS: 5000,         // Connection timeout
-        socketTimeoutMS: 5000           // Socket timeout
-      });
+      testConnection = mongoose.createConnection();
+
+      // Use a promise to track connection status with timeout
+      const connectionResult = await Promise.race([
+        // Connection attempt
+        new Promise((resolve, reject) => {
+          // Set up event handlers before initiating connection
+          testConnection.once('connected', () => {
+            console.log('[MongoDB Test] Connection established successfully');
+            resolve('connected');
+          });
+          
+          testConnection.once('error', (err) => {
+            console.error('[MongoDB Test] Connection failed with error:', err);
+            reject(err);
+          });
+          
+          // Initiate connection after event handlers are set up
+          testConnection.openUri(mongoUri, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            connectTimeoutMS: 5000,
+            socketTimeoutMS: 5000
+          });
+        }),
+        
+        // Timeout
+        new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Connection timeout - took too long to establish connection'));
+          }, 7000); // Slightly longer than the server selection timeout
+        })
+      ]);
       
-      // Wait for the connection to be established
-      await new Promise((resolve, reject) => {
-        testConnection.once('connected', () => {
-          console.log('[MongoDB Test] Connection established successfully');
-          resolve();
-        });
-        
-        testConnection.once('error', (err) => {
-          console.error('[MongoDB Test] Connection failed with error:', err);
-          reject(err);
-        });
-        
-        // Set a timeout in case neither event fires
-        setTimeout(() => {
-          reject(new Error('Connection timeout - neither connected nor error event fired'));
-        }, 5000);
-      });
+      // If we get here, connection was successful
+      console.log(`[MongoDB Test] Connection state: ${testConnection.readyState}`);
       
       // Verify that the connection is actually working by running a command
       try {
-        if (!testConnection || !testConnection.db) {
+        // Only proceed if connection and database are available
+        if (testConnection && testConnection.db) {
+          // Try to run the ping command to ensure the connection is fully established
+          await testConnection.db.admin().command({ ping: 1 });
+          
+          // Log connection information
+          console.log(`[MongoDB Test] Successfully connected to: ${testConnection.host || 'unknown'}:${testConnection.port || 'unknown'}`);
+          console.log(`[MongoDB Test] Database name: ${testConnection.name || 'unknown'}`);
+          
+          // Close the test connection
+          if (testConnection) {
+            await testConnection.close(true);
+            console.log(`[MongoDB Test] Test connection closed successfully`);
+          }
+          
+          return res.status(200).json({
+            success: true,
+            message: 'Connection successful',
+          });
+        } else {
           throw new Error('Connection object or database not available');
         }
-        
-        // Try to run the ping command to ensure the connection is fully established
-        await testConnection.db.admin().ping();
-        
-        // Log connection information
-        console.log(`[MongoDB Test] Successfully connected to: ${testConnection.host || 'unknown'}:${testConnection.port || 'unknown'}`);
-        console.log(`[MongoDB Test] Database name: ${testConnection.name || 'unknown'}`);
-        console.log(`[MongoDB Test] Connection state: ${testConnection.readyState}`);
-        
-        // Close the test connection
-        if (testConnection) {
-          await testConnection.close();
-          console.log(`[MongoDB Test] Test connection closed successfully`);
-        }
-        
-        return res.status(200).json({
-          success: true,
-          message: 'Connection successful',
-        });
       } catch (pingError) {
         // Failed to ping the database even though connection was established
         console.error('[MongoDB Test] Database ping failed:', pingError);
@@ -94,7 +106,7 @@ exports.testConnection = async (req, res) => {
         // Try to close the connection if it exists
         if (testConnection) {
           try {
-            await testConnection.close();
+            await testConnection.close(true);
             console.log('[MongoDB Test] Connection closed after ping failure');
           } catch (closeError) {
             console.error('[MongoDB Test] Error closing connection:', closeError);
@@ -113,7 +125,7 @@ exports.testConnection = async (req, res) => {
       // Try to close the connection if it exists
       if (testConnection) {
         try {
-          await testConnection.close();
+          await testConnection.close(true);
           console.log('[MongoDB Test] Connection closed after error');
         } catch (closeError) {
           console.error('[MongoDB Test] Error closing connection:', closeError);
@@ -121,20 +133,30 @@ exports.testConnection = async (req, res) => {
       }
       
       // Log detailed connection error information
+      let errorDetails = '';
       if (connectionError.name) {
         console.error(`[MongoDB Test] Error name: ${connectionError.name}`);
+        errorDetails += `${connectionError.name}: `;
       }
       if (connectionError.code) {
         console.error(`[MongoDB Test] Error code: ${connectionError.code}`);
+        errorDetails += `(Code ${connectionError.code}) `;
+      }
+      if (connectionError.codeName) {
+        console.error(`[MongoDB Test] Error code name: ${connectionError.codeName}`);
+        errorDetails += `(${connectionError.codeName}) `;
       }
       if (connectionError.message) {
         console.error(`[MongoDB Test] Error message: ${connectionError.message}`);
+        errorDetails += connectionError.message;
       }
       
       // Generate more detailed error message depending on error type
       let detailedError = 'Could not connect to MongoDB.';
       
-      if (connectionError.name === 'MongoServerSelectionError') {
+      if (connectionError.name === 'MongoServerError' && connectionError.codeName === 'AtlasError') {
+        detailedError = 'Authentication failed with MongoDB Atlas. Please verify your username and password.';
+      } else if (connectionError.name === 'MongoServerSelectionError') {
         detailedError = 'Could not reach MongoDB server. Check if the server address is correct and accessible.';
       } else if (connectionError.name === 'MongoParseError') {
         detailedError = 'MongoDB connection string format is invalid. Please check the URI format.';
@@ -147,14 +169,13 @@ exports.testConnection = async (req, res) => {
         detailedError = 'Connection refused. MongoDB server may not be running or port may be blocked.';
       } else if (connectionError.message && connectionError.message.includes('EBADNAME')) {
         detailedError = 'Invalid hostname in MongoDB URI. Please check the format of your connection string.';
-      } else if (connectionError.codeName === 'AtlasError' || 
-                (connectionError.message && connectionError.message.includes('bad auth'))) {
-        detailedError = 'Authentication failed with MongoDB Atlas. Please verify your username and password.';
+      } else if (connectionError.message && connectionError.message.includes('bad auth')) {
+        detailedError = 'Authentication failed. Please verify your username and password.';
       }
       
       return res.status(400).json({ 
         success: false, 
-        error: `${detailedError} Original error: ${connectionError.message}` 
+        error: `${detailedError}${errorDetails ? ' Details: ' + errorDetails : ''}` 
       });
     }
   } catch (error) {
