@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Base axios instance
 export const apiClient = axios.create({
-  baseURL: '/api', // Updated to use relative path for proxy
+  baseURL: '/api', // Using relative path for proxy
   headers: {
     'Content-Type': 'application/json',
   },
@@ -23,8 +23,9 @@ apiClient.interceptors.request.use(
     const storedUser = localStorage.getItem("auth_user");
     const clientId = storedUser ? JSON.parse(storedUser).clientId : null;
     
-    // Add client ID to all requests if available
-    if (clientId) {
+    // Only add client ID to non-auth requests
+    // This prevents adding clientId to login requests which should be validated from the request body
+    if (clientId && !config.url?.includes('/auth/')) {
       if (config.url?.includes('?')) {
         config.url = `${config.url}&clientId=${clientId}`;
       } else {
