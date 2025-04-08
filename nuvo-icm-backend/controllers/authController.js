@@ -54,16 +54,12 @@ exports.login = async (req, res) => {
       }
     }
 
-    // Find user in the users collection with trimmed values
-    console.log('Looking up user with criteria:', { 
-      username: username.trim(), 
-      role: role.trim(), 
-      clientId: clientId.trim() 
-    });
+    // Find user in the users collection
+    console.log('Looking up user with criteria:', { username, role, clientId });
     const user = await mongoose.connection.db.collection('users').findOne({ 
-      username: username.trim(),
-      role: role.trim(),
-      clientId: clientId.trim()
+      username: username,
+      role: role,
+      clientId: clientId
     });
     
     console.log('User lookup result:', user ? 'Found' : 'Not found');
