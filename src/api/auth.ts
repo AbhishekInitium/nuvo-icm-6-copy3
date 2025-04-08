@@ -21,18 +21,13 @@ interface AuthResponse {
 
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   try {
-    console.log('Attempting login with credentials:', {
-      username: credentials.username, 
-      role: credentials.role, 
-      clientId: credentials.clientId
-    });
+    console.log('Attempting login with credentials:', credentials);
     console.log('API client baseURL:', apiClient.defaults.baseURL);
     
-    // Sending login request to backend at http://localhost:3000/auth/login
-    // which will be proxied through /api/auth/login
+    // Use expanded error handling
     const response = await apiClient.post('/auth/login', credentials);
     
-    console.log('Login response from backend:', response.data);
+    console.log('Login response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Login error:', error);
