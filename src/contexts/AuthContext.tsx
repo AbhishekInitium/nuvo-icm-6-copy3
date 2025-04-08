@@ -1,5 +1,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { authApi } from "@/api/client";
+import { toast } from "@/hooks/use-toast";
 
 // Define user roles
 export type UserRole = "Admin" | "Manager" | "Agent" | "Finance";
@@ -14,9 +16,10 @@ interface AuthUser {
 // Define auth context interface
 interface AuthContextType {
   user: AuthUser | null;
-  login: (username: string, role: UserRole, clientId: string) => void;
+  login: (username: string, password: string, role: UserRole, clientId: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 // Create the auth context
@@ -30,6 +33,7 @@ interface AuthProviderProps {
 // Auth provider component
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Check for existing user on mount
   useEffect(() => {
@@ -40,10 +44,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   // Login function
-  const login = (username: string, role: UserRole, clientId: string) => {
-    const authUser = { username, role, clientId };
-    localStorage.setItem("auth_user", JSON.stringify(authUser));
-    setUser(authUser);
+  const login = async (username: string, password: string, role: UserRole, clientId: string) => {
+    setIsLoading(true);
+    
+    try {
+      // For MongoDB validation path
+      const response = await authApi.login(username, password, clientId);
+      
+      // If we get here, authentication was successful
+      const authUser = { 
+        username, 
+        role: response.role || role, // Use role from server if available
+        clientId 
+      };
+      
+      localStorage.setItem("auth_user", JSON.stringify(authUser));
+      setUser(authUser);
+      setIsLoading(false);
+      
+      return true;
+    } catch (error: any) {
+      console.error("Authentication error:", error);
+      
+      // Show error message from server or fallback
+      const errorMessage = error.response?.data?.message || "Authentication failed";
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      setIsLoading(false);
+      return false;
+    }
   };
 
   // Logout function
@@ -58,6 +91,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     logout,
     isAuthenticated: !!user,
+    isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
