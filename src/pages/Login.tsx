@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 // Mock client IDs
 const MOCK_CLIENT_IDS = ["NUVO_01", "Globex-002", "Initech-003", "Umbrella-004", "Cyberdyne-005"];
@@ -18,17 +19,25 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [role, setRole] = useState<UserRole>("Manager");
   const [clientId, setClientId] = useState(MOCK_CLIENT_IDS[0]);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
+    
+    console.log('Login form submitted:', { username, role, clientId });
     
     const success = await login(username, role, clientId);
     
-    if (!success && error) {
+    console.log('Login result:', { success, error });
+    
+    if (!success) {
+      const errorMessage = error || "Authentication failed. Please check your credentials.";
+      setLocalError(errorMessage);
       toast({
         title: "Authentication Failed",
-        description: error,
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -36,6 +45,7 @@ export default function Login() {
 
   // Redirect if user is already authenticated
   if (isAuthenticated) {
+    console.log('User is authenticated, redirecting based on role:', user?.role);
     // Redirect based on role
     if (user?.role === "Admin") return <Navigate to="/kpi-configurator" replace />;
     if (user?.role === "Agent") return <Navigate to="/agent-dashboard" replace />;
@@ -101,6 +111,12 @@ export default function Login() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {localError && (
+              <div className="p-3 bg-destructive/10 border border-destructive rounded-md text-sm text-destructive">
+                {localError}
+              </div>
+            )}
           </form>
         </CardContent>
         <CardFooter>
@@ -109,7 +125,14 @@ export default function Login() {
             onClick={handleSubmit}
             disabled={isLoading || !username}
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </Button>
         </CardFooter>
       </Card>

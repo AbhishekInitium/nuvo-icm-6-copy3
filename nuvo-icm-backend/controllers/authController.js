@@ -9,7 +9,10 @@ const bcrypt = require('bcryptjs');
 exports.login = async (req, res) => {
   const { username, role, clientId } = req.body;
 
+  console.log('Login attempt:', { username, role, clientId });
+
   if (!username || !role || !clientId) {
+    console.log('Missing required fields:', { username, role, clientId });
     return res.status(400).json({
       success: false,
       error: 'Please provide username, role and clientId'
@@ -23,8 +26,12 @@ exports.login = async (req, res) => {
     // Get the users collection
     const usersCollection = db.collection('users');
     
+    console.log('Searching for user:', username);
+    
     // Find user by username
     const user = await usersCollection.findOne({ username });
+    
+    console.log('User found in DB:', user ? 'Yes' : 'No');
     
     if (!user) {
       return res.status(401).json({
@@ -34,6 +41,7 @@ exports.login = async (req, res) => {
     }
     
     // Check if role matches
+    console.log('Checking role:', { userRole: user.role, providedRole: role });
     if (user.role !== role) {
       return res.status(401).json({
         success: false,
@@ -42,6 +50,7 @@ exports.login = async (req, res) => {
     }
     
     // Check if client ID matches
+    console.log('Checking clientId:', { userClientId: user.clientId, providedClientId: clientId });
     if (user.clientId !== clientId) {
       return res.status(401).json({
         success: false,
@@ -50,6 +59,7 @@ exports.login = async (req, res) => {
     }
     
     // Authentication successful
+    console.log('Authentication successful for user:', username);
     return res.status(200).json({
       success: true,
       user: {

@@ -9,30 +9,56 @@ export const apiClient = axios.create({
   },
 });
 
-// Request interceptor for adding client ID
-apiClient.interceptors.request.use((config) => {
-  // Get stored user data from localStorage if available
-  const storedUser = localStorage.getItem("auth_user");
-  const clientId = storedUser ? JSON.parse(storedUser).clientId : null;
-  
-  // Add client ID to all requests if available
-  if (clientId) {
-    if (config.url?.includes('?')) {
-      config.url = `${config.url}&clientId=${clientId}`;
-    } else {
-      config.url = `${config.url}?clientId=${clientId}`;
+// Add request interceptor for debugging
+apiClient.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', {
+      url: config.url,
+      method: config.method,
+      data: config.data,
+      headers: config.headers
+    });
+    
+    // Get stored user data from localStorage if available
+    const storedUser = localStorage.getItem("auth_user");
+    const clientId = storedUser ? JSON.parse(storedUser).clientId : null;
+    
+    // Add client ID to all requests if available
+    if (clientId) {
+      if (config.url?.includes('?')) {
+        config.url = `${config.url}&clientId=${clientId}`;
+      } else {
+        config.url = `${config.url}?clientId=${clientId}`;
+      }
     }
+    
+    return config;
+  },
+  (error) => {
+    console.error('API Request Error:', error);
+    return Promise.reject(error);
   }
-  
-  return config;
-});
+);
 
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('API Response:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    });
+    return response;
+  },
   (error) => {
     // Handle error cases, like 401, 403, etc.
     console.error('API Error:', error);
+    console.error('API Error Details:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data
+    });
     return Promise.reject(error);
   }
 );
