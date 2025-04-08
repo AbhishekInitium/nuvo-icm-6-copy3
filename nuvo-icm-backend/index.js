@@ -1,6 +1,7 @@
 
 require('dotenv').config(); // Ensure this is at the top to load env variables first
 const express = require('express');
+const cors = require('cors');
 const connectDB = require('./config/db');
 const checkMongoHealth = require('./middleware/mongoHealthCheck');
 const healthRoutes = require('./routes/health.routes');
@@ -20,6 +21,18 @@ const app = express();
 // Connect to MongoDB (just the master database for MasterConfig)
 console.log(`MongoDB URI loaded: ${process.env.MONGODB_URI ? 'Yes (URI value hidden for security)' : 'No'}`);
 connectDB();
+
+// CORS Configuration
+const corsOptions = {
+  origin: ['http://localhost:8080', 'http://localhost:8081', 'https://preview--nuvo-icm-6-copy3.lovable.app', /\.lovable\.app$/],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204,
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
 // Middleware
 app.use(express.json());
@@ -57,4 +70,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`CORS enabled for: http://localhost:8080, http://localhost:8081, and Lovable domains`);
 });
