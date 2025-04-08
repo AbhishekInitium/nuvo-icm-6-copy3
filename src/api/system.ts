@@ -1,4 +1,3 @@
-
 import { apiClient } from './client';
 
 export interface SystemConfigInput {
@@ -60,14 +59,49 @@ export interface ConnectionStatusResponse {
  */
 export const testConnection = async (mongoUri: string): Promise<ConnectionTestResponse> => {
   try {
+    // Basic validation before sending request
+    if (!mongoUri) {
+      return {
+        success: false,
+        error: 'MongoDB URI is required'
+      };
+    }
+    
+    // Validate MongoDB URI format
+    const uriPattern = /^mongodb(\+srv)?:\/\/([^:]+):([^@]+)@([^\/]+)\/([^?]+)/;
+    if (!uriPattern.test(mongoUri)) {
+      return {
+        success: false,
+        error: 'Invalid MongoDB URI format. Required format: mongodb[+srv]://username:password@host/database'
+      };
+    }
+    
     const response = await apiClient.post('/system/test-connection', { mongoUri });
     return response.data;
   } catch (error) {
     console.error('API Error during connection test:', error);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || error.message || 'Connection test failed: Network error'
-    };
+    
+    // Detailed error handling
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      return { 
+        success: false, 
+        error: error.response.data?.error || 'Connection test failed: Server error' 
+      };
+    } else if (error.request) {
+      // The request was made but no response was received
+      return { 
+        success: false, 
+        error: 'Connection test failed: No response from server. Is the backend running?' 
+      };
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      return { 
+        success: false, 
+        error: error.message || 'Connection test failed: Request error'
+      };
+    }
   }
 };
 

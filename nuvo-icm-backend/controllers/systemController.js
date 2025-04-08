@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
 const MasterConfig = require('../models/MasterConfig');
@@ -28,22 +29,48 @@ exports.testConnection = async (req, res) => {
       const testConnection = await mongoose.createConnection(mongoUri, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000 // 5 seconds timeout for connection test
+        serverSelectionTimeoutMS: 5000, // 5 seconds timeout for connection test
+        connectTimeoutMS: 5000,         // Connection timeout
+        socketTimeoutMS: 5000           // Socket timeout
       });
       
-      // Log connection information
-      console.log(`[MongoDB Test] Successfully connected to: ${testConnection.host}:${testConnection.port}`);
-      console.log(`[MongoDB Test] Database name: ${testConnection.name}`);
-      console.log(`[MongoDB Test] Connection state: ${testConnection.readyState}`);
-      
-      // Close the test connection
-      await testConnection.close();
-      console.log(`[MongoDB Test] Test connection closed successfully`);
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Connection successful',
-      });
+      // Verify that the connection is actually working by running a command
+      try {
+        // Try to run the ping command to ensure the connection is fully established
+        await testConnection.db.admin().ping();
+        
+        // Log connection information
+        console.log(`[MongoDB Test] Successfully connected to: ${testConnection.host}:${testConnection.port}`);
+        console.log(`[MongoDB Test] Database name: ${testConnection.name}`);
+        console.log(`[MongoDB Test] Connection state: ${testConnection.readyState}`);
+        
+        // Close the test connection
+        await testConnection.close();
+        console.log(`[MongoDB Test] Test connection closed successfully`);
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Connection successful',
+        });
+      } catch (pingError) {
+        // Failed to ping the database even though connection was established
+        console.error('[MongoDB Test] Database ping failed:', pingError);
+        
+        // Try to close the connection if it exists
+        if (testConnection) {
+          try {
+            await testConnection.close();
+            console.log('[MongoDB Test] Connection closed after ping failure');
+          } catch (closeError) {
+            console.error('[MongoDB Test] Error closing connection:', closeError);
+          }
+        }
+        
+        return res.status(400).json({
+          success: false,
+          error: `Database connection established but failed to verify: ${pingError.message}`
+        });
+      }
     } catch (connectionError) {
       console.error('[MongoDB Test] Connection test failed with error:');
       console.error(connectionError);
@@ -67,19 +94,20 @@ exports.testConnection = async (req, res) => {
       
       if (connectionError.name === 'MongoServerSelectionError') {
         detailedError = 'Could not reach MongoDB server. Check if the server address is correct and accessible.';
-        console.error('[MongoDB Test] Server selection timeout - could not find MongoDB server.');
       } else if (connectionError.name === 'MongoParseError') {
         detailedError = 'MongoDB connection string format is invalid. Please check the URI format.';
-        console.error('[MongoDB Test] Connection string format is invalid.');
-      } else if (connectionError.message && connectionError.message.includes('Authentication failed')) {
+      } else if (connectionError.message && connectionError.message.includes('Authentication failed') || 
+                connectionError.name === 'MongoServerError' && connectionError.message.includes('auth')) {
         detailedError = 'Authentication failed. Please verify username and password in your connection string.';
-        console.error('[MongoDB Test] Authentication failed - username or password incorrect.');
       } else if (connectionError.message && connectionError.message.includes('ENOTFOUND')) {
         detailedError = 'Host not found. Please check if the MongoDB server hostname is correct.';
-        console.error('[MongoDB Test] Host not found - invalid hostname.');
       } else if (connectionError.message && connectionError.message.includes('ECONNREFUSED')) {
         detailedError = 'Connection refused. MongoDB server may not be running or port may be blocked.';
-        console.error('[MongoDB Test] Connection refused - server not responding on specified port.');
+      } else if (connectionError.message && connectionError.message.includes('EBADNAME')) {
+        detailedError = 'Invalid hostname in MongoDB URI. Please check the format of your connection string.';
+      } else if (connectionError.codeName === 'AtlasError' || 
+                (connectionError.message && connectionError.message.includes('bad auth'))) {
+        detailedError = 'Authentication failed with MongoDB Atlas. Please verify your username and password.';
       }
       
       return res.status(400).json({ 
