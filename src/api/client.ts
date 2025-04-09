@@ -28,12 +28,6 @@ apiClient.interceptors.request.use(
     
     // Only add client ID to non-auth requests
     if (clientId && !config.url?.includes('/auth/')) {
-      // Add clientId to the request data for POST/PUT requests
-      if (config.method?.toUpperCase() === 'POST' || config.method?.toUpperCase() === 'PUT') {
-        config.data = { ...config.data, clientId };
-      }
-      
-      // Add clientId to the query parameters for all requests
       if (config.url?.includes('?')) {
         config.url = `${config.url}&clientId=${clientId}`;
       } else {

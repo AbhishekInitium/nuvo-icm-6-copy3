@@ -6,25 +6,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Control } from "react-hook-form";
 import { SchemeFormValues } from "@/hooks/useSchemeForm";
 import { apiClient } from "@/api/client";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface SchemeConfigProps {
   control: Control<SchemeFormValues>;
 }
 
 export function SchemeConfig({ control }: SchemeConfigProps) {
-  const { user } = useAuth();
-  
-  // Fetch available KPI configs for dropdown using the client ID from the authenticated user
+  // Fetch available configs for dropdown
   const { data: configsData, isLoading: configsLoading } = useQuery({
-    queryKey: ['kpiConfigs', user?.clientId],
+    queryKey: ['configs'],
     queryFn: async () => {
-      // Using the proper endpoint to fetch KPI configurations from client DB
-      const response = await apiClient.get('/manager/kpi-configs');
-      console.log('Available KPI configs response:', response.data);
+      const response = await apiClient.get('/admin/configs');
       return response.data.data;
     },
-    enabled: !!user?.clientId, // Only run the query if we have a client ID
   });
 
   return (
