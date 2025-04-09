@@ -269,10 +269,10 @@ exports.setConnection = async (req, res) => {
 
     // Define the collection names for this client
     const collections = {
-      schemes: `${clientId}.schemes`,
-      executionlogs: `${clientId}.executionlogs`,
-      kpiconfigs: `${clientId}.kpiconfigs`,
-      systemconfigs: `${clientId}.systemconfigs`
+      schemes: `schemes`,
+      executionlogs: `executionlogs`,
+      kpiconfigs: `kpiconfigs`,
+      systemconfigs: `systemconfigs`
     };
 
     // Create the collections (this just ensures they exist in MongoDB)
