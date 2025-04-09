@@ -18,30 +18,6 @@ export interface SystemConfigResponse {
   error?: string;
 }
 
-export interface KpiConfigInput {
-  clientId: string;
-  adminId: string;
-  adminName: string;
-  calculationBase: string;
-  baseField: string;
-  baseData?: any[];
-  qualificationFields?: any[];
-  adjustmentFields?: any[];
-  exclusionFields?: any[];
-  customRules?: any[];
-}
-
-export interface KpiConfigResponse {
-  success: boolean;
-  message?: string;
-  data?: {
-    id: string;
-    adminName: string;
-    clientId: string;
-  };
-  error?: string;
-}
-
 export interface ConnectionTestResponse {
   success: boolean;
   message?: string;
@@ -164,76 +140,6 @@ export const saveSystemConfig = async (config: SystemConfigInput): Promise<Syste
     return { 
       success: false, 
       error: error.response?.data?.error || error.message || 'Save configuration failed: Network error'
-    };
-  }
-};
-
-/**
- * Save KPI configuration to client database
- */
-export const saveKpiConfig = async (config: KpiConfigInput): Promise<KpiConfigResponse> => {
-  try {
-    const response = await apiClient.post('/integration/kpi-config', config);
-    return response.data;
-  } catch (error) {
-    console.error('API Error during save KPI config:', error);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || error.message || 'Save KPI configuration failed: Network error'
-    };
-  }
-};
-
-/**
- * Get all KPI configurations for a client
- */
-export const getKpiConfigs = async (clientId: string): Promise<any> => {
-  try {
-    const response = await apiClient.get('/integration/kpi-configs', {
-      params: { clientId }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('API Error getting KPI configs:', error);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || error.message || 'Get KPI configurations failed: Network error'
-    };
-  }
-};
-
-/**
- * Get a specific KPI configuration by ID
- */
-export const getKpiConfigById = async (id: string, clientId: string): Promise<any> => {
-  try {
-    const response = await apiClient.get(`/integration/kpi-config/${id}`, {
-      params: { clientId }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('API Error getting KPI config:', error);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || error.message || 'Get KPI configuration failed: Network error'
-    };
-  }
-};
-
-/**
- * Delete a KPI configuration
- */
-export const deleteKpiConfig = async (id: string, clientId: string): Promise<any> => {
-  try {
-    const response = await apiClient.delete(`/integration/kpi-config/${id}`, {
-      params: { clientId }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('API Error deleting KPI config:', error);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || error.message || 'Delete KPI configuration failed: Network error'
     };
   }
 };
