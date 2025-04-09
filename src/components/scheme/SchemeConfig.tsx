@@ -15,12 +15,13 @@ interface SchemeConfigProps {
 export function SchemeConfig({ control }: SchemeConfigProps) {
   const { user } = useAuth();
   
-  // Fetch available configs for dropdown using the client ID from the authenticated user
+  // Fetch available KPI configs for dropdown using the client ID from the authenticated user
   const { data: configsData, isLoading: configsLoading } = useQuery({
-    queryKey: ['configs', user?.clientId],
+    queryKey: ['kpiConfigs', user?.clientId],
     queryFn: async () => {
-      const response = await apiClient.get('/manager/available-configs');
-      console.log('Available configs response:', response.data);
+      // Using the proper endpoint to fetch KPI configurations from client DB
+      const response = await apiClient.get('/manager/kpi-configs');
+      console.log('Available KPI configs response:', response.data);
       return response.data.data;
     },
     enabled: !!user?.clientId, // Only run the query if we have a client ID
