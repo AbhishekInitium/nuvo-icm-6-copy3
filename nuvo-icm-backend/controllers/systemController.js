@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
 const MasterConfig = require('../models/MasterConfig');
@@ -235,17 +236,18 @@ exports.setConnection = async (req, res) => {
       });
     }
 
-    // Test connection to the provided MongoDB URI
+    // Connect to the provided MongoDB URI
     let clientDbConnection;
     try {
+      console.log(`[MongoDB Setup] Connecting to MongoDB for client setup: ${clientId}`);
       clientDbConnection = await mongoose.createConnection(mongoUri, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         serverSelectionTimeoutMS: 10000 // 10 seconds timeout
       });
-      console.log(`MongoDB connection established for client setup: ${clientId}`);
+      console.log(`[MongoDB Setup] Connection established for client setup: ${clientId}`);
     } catch (connectionError) {
-      console.error('MongoDB connection failed:', connectionError);
+      console.error('[MongoDB Setup] Connection failed:', connectionError);
       
       // Generate more detailed error message depending on error type
       let detailedError = 'Could not connect to MongoDB.';
@@ -274,42 +276,42 @@ exports.setConnection = async (req, res) => {
       systemconfigs: `${clientId}.systemconfigs`
     };
 
-    // Create the collections (this just ensures they exist in MongoDB)
+    // Create the collections
     try {
-      await clientDbConnection.createCollection(collections.schemes);
-      await clientDbConnection.createCollection(collections.executionlogs);
-      await clientDbConnection.createCollection(collections.kpiconfigs);
-      await clientDbConnection.createCollection(collections.systemconfigs);
+      console.log(`[MongoDB Setup] Creating collections for client: ${clientId}`);
+      
+      // Force-create collections in MongoDB
+      for (const [key, collName] of Object.entries(collections)) {
+        const collectionName = collName.split('.')[1]; // Get just the collection name without prefix
+        try {
+          await clientDbConnection.db.createCollection(collectionName);
+          console.log(`[MongoDB Setup] Created collection: ${collectionName}`);
+        } catch (err) {
+          // If collection already exists, that's okay - just log and continue
+          if (err.code === 48) { // 48 is MongoDB's "NamespaceExists" error code
+            console.log(`[MongoDB Setup] Collection already exists: ${collectionName}`);
+          } else {
+            console.error(`[MongoDB Setup] Error creating collection ${collectionName}:`, err);
+            throw err; // Re-throw if it's not just a "collection exists" error
+          }
+        }
+      }
     } catch (collectionError) {
-      console.error('Error creating collections:', collectionError);
-      await clientDbConnection.close();
+      console.error('[MongoDB Setup] Error creating collections:', collectionError);
+      
+      // Try to close the connection
+      if (clientDbConnection) {
+        try {
+          await clientDbConnection.close();
+          console.log('[MongoDB Setup] Connection closed after error');
+        } catch (closeError) {
+          console.error('[MongoDB Setup] Error closing connection:', closeError);
+        }
+      }
+      
       return res.status(500).json({
         success: false,
         error: `Failed to create collections: ${collectionError.message}`
-      });
-    }
-
-    // Verify that the collections were created successfully
-    try {
-      const collectionsList = await clientDbConnection.db.listCollections().toArray();
-      const collectionNames = collectionsList.map(c => c.name);
-      
-      const missingCollections = Object.values(collections)
-        .filter(name => !collectionNames.includes(name.split('.')[1]));
-      
-      if (missingCollections.length > 0) {
-        await clientDbConnection.close();
-        return res.status(500).json({
-          success: false,
-          error: `Failed to verify collections: ${missingCollections.join(', ')} were not created.`
-        });
-      }
-    } catch (verifyError) {
-      console.error('Error verifying collections:', verifyError);
-      await clientDbConnection.close();
-      return res.status(500).json({
-        success: false,
-        error: `Failed to verify collections: ${verifyError.message}`
       });
     }
 
@@ -320,6 +322,7 @@ exports.setConnection = async (req, res) => {
       existingConfig.collections = collections;
       existingConfig.setupComplete = true;
       config = await existingConfig.save();
+      console.log(`[MongoDB Setup] Updated existing configuration for client: ${clientId}`);
     } else {
       config = await MasterConfig.create({
         clientId,
@@ -327,10 +330,14 @@ exports.setConnection = async (req, res) => {
         collections,
         setupComplete: true
       });
+      console.log(`[MongoDB Setup] Created new configuration for client: ${clientId}`);
     }
 
     // Close the connection
-    await clientDbConnection.close();
+    if (clientDbConnection) {
+      await clientDbConnection.close();
+      console.log(`[MongoDB Setup] Connection closed for client: ${clientId}`);
+    }
 
     // Return the saved configuration
     return res.status(200).json({
@@ -344,10 +351,10 @@ exports.setConnection = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error setting up client MongoDB:', error);
+    console.error('[MongoDB Setup] Error setting up client MongoDB:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server Error'
+      error: `Server Error: ${error.message}`
     });
   }
 };

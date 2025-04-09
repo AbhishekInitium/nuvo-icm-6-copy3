@@ -38,12 +38,35 @@ async function connectClientDb(clientId) {
   try {
     // Create a new connection to the client's MongoDB
     console.log(`[MongoDB] Connecting to MongoDB for client: ${clientId} - URI: ${config.mongoUri.replace(/mongodb(\+srv)?:\/\/([^:]+):([^@]+)@/, 'mongodb$1://$2:***@')}`);
-    const conn = await mongoose.createConnection(config.mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
+    
+    // Create connection using a Promise that handles errors properly
+    const conn = await new Promise((resolve, reject) => {
+      const connection = mongoose.createConnection();
+      
+      // Set up event handlers before initiating connection
+      connection.once('connected', () => {
+        console.log(`[MongoDB] Successfully connected to MongoDB for client: ${clientId}`);
+        resolve(connection);
+      });
+      
+      connection.once('error', (err) => {
+        console.error(`[MongoDB] Connection error for client ${clientId}:`, err);
+        reject(err);
+      });
+      
+      // Initiate the connection
+      connection.openUri(config.mongoUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 10000
+      }).catch(err => {
+        // This catch is critical for handling errors in the openUri promise
+        console.error(`[MongoDB] openUri failed for client ${clientId}:`, err);
+        reject(err);
+      });
     });
 
-    // Set up connection error handlers
+    // Set up connection error handlers after successful connection
     conn.on('error', (err) => {
       console.error(`[MongoDB] Connection error for client ${clientId}:`, err);
       delete cachedConnections[clientId];
