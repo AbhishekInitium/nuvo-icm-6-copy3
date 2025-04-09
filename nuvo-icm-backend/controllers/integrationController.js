@@ -1,6 +1,8 @@
 
+const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
-const { getClientConfig } = require('../utils/clientLoader');
+const MasterConfig = require('../models/MasterConfig');
+const { connectClientDb } = require('../utils/clientConnection');
 
 /**
  * @desc    Save or update system configuration
@@ -21,22 +23,43 @@ exports.saveSystemConfig = async (req, res) => {
       });
     }
 
-    // Validate clientId using clientLoader
-    try {
-      getClientConfig(clientId);
-    } catch (error) {
-      return res.status(404).json({
+    // Get the master configuration for this client
+    const masterConfig = await MasterConfig.findOne({ clientId });
+    
+    if (!masterConfig || !masterConfig.setupComplete) {
+      return res.status(400).json({
         success: false,
-        error: error.message
+        error: 'Client database setup is not complete. Please set up the connection first.'
       });
     }
 
+    // Connect to the client's database
+    let clientDbConnection;
+    try {
+      clientDbConnection = await connectClientDb(clientId);
+    } catch (connectionError) {
+      console.error('MongoDB connection failed:', connectionError);
+      return res.status(500).json({
+        success: false,
+        error: `Failed to connect to client database: ${connectionError.message}`
+      });
+    }
+
+    // Create a model for the client's system config collection
+    const ClientSystemConfig = clientDbConnection.model('SystemConfig', 
+      new mongoose.Schema({
+        clientId: String,
+        ...SystemConfig.schema.obj // Copy fields from our main SystemConfig schema
+      }), 
+      masterConfig.collections.systemconfigs // Use the collection name from masterConfig
+    );
+
     // Check if configuration already exists
-    let systemConfig = await SystemConfig.findOne({ clientId });
+    let systemConfig = await ClientSystemConfig.findOne({ clientId });
 
     if (systemConfig) {
       // Update existing configuration
-      systemConfig = await SystemConfig.findOneAndUpdate(
+      systemConfig = await ClientSystemConfig.findOneAndUpdate(
         { clientId },
         { 
           kpiApiMappings 
@@ -45,7 +68,7 @@ exports.saveSystemConfig = async (req, res) => {
       );
     } else {
       // Create new configuration
-      systemConfig = await SystemConfig.create({
+      systemConfig = await ClientSystemConfig.create({
         clientId,
         kpiApiMappings
       });
@@ -84,17 +107,38 @@ exports.getSystemConfig = async (req, res) => {
       });
     }
 
-    // Validate clientId using clientLoader
-    try {
-      getClientConfig(clientId);
-    } catch (error) {
+    // Get the master configuration for this client
+    const masterConfig = await MasterConfig.findOne({ clientId });
+    
+    if (!masterConfig || !masterConfig.setupComplete) {
       return res.status(404).json({
         success: false,
-        error: error.message
+        error: `Client database setup is not complete for client: ${clientId}`
       });
     }
 
-    const systemConfig = await SystemConfig.findOne({ clientId });
+    // Connect to the client's database
+    let clientDbConnection;
+    try {
+      clientDbConnection = await connectClientDb(clientId);
+    } catch (connectionError) {
+      console.error('MongoDB connection failed:', connectionError);
+      return res.status(500).json({
+        success: false,
+        error: `Failed to connect to client database: ${connectionError.message}`
+      });
+    }
+
+    // Create a model for the client's system config collection
+    const ClientSystemConfig = clientDbConnection.model('SystemConfig', 
+      new mongoose.Schema({
+        clientId: String,
+        ...SystemConfig.schema.obj // Copy fields from our main SystemConfig schema
+      }), 
+      masterConfig.collections.systemconfigs // Use the collection name from masterConfig
+    );
+
+    const systemConfig = await ClientSystemConfig.findOne({ clientId });
 
     if (!systemConfig) {
       return res.status(404).json({

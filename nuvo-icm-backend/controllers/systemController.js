@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
 const MasterConfig = require('../models/MasterConfig');
@@ -267,7 +266,7 @@ exports.setConnection = async (req, res) => {
       });
     }
 
-    // Define the collection names for this client
+    // Define the collection names for this client - no prefixing with clientId
     const collections = {
       schemes: `schemes`,
       executionlogs: `executionlogs`,
@@ -275,7 +274,7 @@ exports.setConnection = async (req, res) => {
       systemconfigs: `systemconfigs`
     };
 
-    // Create the collections (this just ensures they exist in MongoDB)
+    // Create the collections in the client's database (not in the master database)
     try {
       await clientDbConnection.createCollection(collections.schemes);
       await clientDbConnection.createCollection(collections.executionlogs);
@@ -292,8 +291,7 @@ exports.setConnection = async (req, res) => {
       });
     }
 
-    // Save the configuration without verifying collections
-    // This fixes the verification step that was causing errors
+    // Save the configuration in the master database
     let config;
     if (existingConfig) {
       existingConfig.mongoUri = mongoUri;
@@ -309,7 +307,7 @@ exports.setConnection = async (req, res) => {
       });
     }
 
-    // Close the connection
+    // Close the connection to the client's database
     await clientDbConnection.close();
 
     // Return the saved configuration
@@ -376,7 +374,7 @@ exports.saveSystemConfig = async (req, res) => {
         clientId: String,
         ...SystemConfig.schema.obj // Copy fields from our main SystemConfig schema
       }), 
-      masterConfig.collections.systemconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.systemconfigs // Use the client-specific collection name without any prefix
     );
 
     // Check if config already exists for this client
@@ -468,7 +466,7 @@ exports.getSystemConfig = async (req, res) => {
         clientId: String,
         ...SystemConfig.schema.obj // Copy fields from our main SystemConfig schema
       }), 
-      masterConfig.collections.systemconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.systemconfigs // Use the client-specific collection name without any prefix
     );
 
     // Get client system config
