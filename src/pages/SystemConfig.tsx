@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,7 +24,6 @@ const databaseSetupSchema = z.object({
 
 const systemConfigSchema = z.object({
   clientId: z.string().min(3, { message: "Client ID must be at least 3 characters" }),
-  defaultCurrency: z.string().optional()
 });
 
 interface KpiMapping {
@@ -59,7 +59,6 @@ export function SystemConfig() {
     resolver: zodResolver(systemConfigSchema),
     defaultValues: {
       clientId: user?.clientId || '',
-      defaultCurrency: 'USD'
     }
   });
 
@@ -174,7 +173,6 @@ export function SystemConfig() {
       const configData: SystemConfigInput = {
         clientId: data.clientId,
         mongoUri: setupForm.getValues('mongoUri'),
-        defaultCurrency: data.defaultCurrency
       };
       
       const response = await saveSystemConfig(configData);
@@ -222,7 +220,6 @@ export function SystemConfig() {
           
           configForm.reset({
             clientId: config.clientId,
-            defaultCurrency: config.defaultCurrency || 'USD'
           });
           
           if (config.kpiApiMappings && Array.isArray(config.kpiApiMappings)) {
@@ -412,38 +409,6 @@ export function SystemConfig() {
               Save Configuration
             </Button>
           </div>
-          
-          <Card className="mb-6">
-            <CardHeader className="bg-green-50">
-              <CardTitle className="text-green-700 text-lg font-bold">
-                System Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={configForm.control}
-                  name="defaultCurrency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Default Currency</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="e.g., USD, EUR, GBP"
-                          disabled={!setupComplete}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Default currency for calculations
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
           
           <Card>
             <CardHeader className="bg-purple-50">

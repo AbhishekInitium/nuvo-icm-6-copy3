@@ -16,11 +16,6 @@ const SystemConfigSchema = new mongoose.Schema({
     required: [true, 'MongoDB URI is required'],
     trim: true
   },
-  defaultCurrency: {
-    type: String,
-    default: 'USD',
-    trim: true
-  },
   kpiApiMappings: [
     {
       kpiName: {

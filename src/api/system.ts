@@ -1,9 +1,9 @@
+
 import { apiClient } from './client';
 
 export interface SystemConfigInput {
   clientId: string;
   mongoUri: string;
-  defaultCurrency?: string;
 }
 
 export interface SystemConfigResponse {

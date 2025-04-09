@@ -11,7 +11,6 @@ exports.saveSystemConfig = async (req, res) => {
   try {
     const { 
       clientId, 
-      defaultCurrency,
       kpiApiMappings 
     } = req.body;
 
@@ -40,7 +39,6 @@ exports.saveSystemConfig = async (req, res) => {
       systemConfig = await SystemConfig.findOneAndUpdate(
         { clientId },
         { 
-          defaultCurrency,
           kpiApiMappings 
         },
         { new: true, runValidators: true }
@@ -49,7 +47,6 @@ exports.saveSystemConfig = async (req, res) => {
       // Create new configuration
       systemConfig = await SystemConfig.create({
         clientId,
-        defaultCurrency,
         kpiApiMappings
       });
     }
@@ -58,7 +55,6 @@ exports.saveSystemConfig = async (req, res) => {
       success: true,
       data: {
         clientId: systemConfig.clientId,
-        defaultCurrency: systemConfig.defaultCurrency,
         kpiApiMappings: systemConfig.kpiApiMappings,
         createdAt: systemConfig.createdAt
       }
@@ -111,7 +107,6 @@ exports.getSystemConfig = async (req, res) => {
       success: true,
       data: {
         clientId: systemConfig.clientId,
-        defaultCurrency: systemConfig.defaultCurrency,
         kpiApiMappings: systemConfig.kpiApiMappings,
         createdAt: systemConfig.createdAt
       }
