@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,15 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Save, Database, Check, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { 
-  saveSystemConfig, 
-  getSystemConfig, 
-  SystemConfigInput, 
-  testConnection, 
-  setupConnection,
-  saveKpiApiMappings,
-  getKpiApiMappings
-} from '@/api/system';
+import { saveSystemConfig, getSystemConfig, SystemConfigInput, testConnection, setupConnection } from '@/api/system';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
@@ -177,18 +170,17 @@ export function SystemConfig() {
     try {
       setLoading(true);
       
-      const formattedMappings = kpiMappings.map(mapping => ({
-        kpiName: mapping.kpiName,
-        apiEndpoint: mapping.apiEndpoint,
-        id: mapping.id
-      }));
+      const configData: SystemConfigInput = {
+        clientId: data.clientId,
+        mongoUri: setupForm.getValues('mongoUri'),
+      };
       
-      const response = await saveKpiApiMappings(data.clientId, formattedMappings);
+      const response = await saveSystemConfig(configData);
       
       if (response.success) {
         toast({
           title: "Configuration Saved",
-          description: response.message || "KPI mappings have been saved successfully",
+          description: response.message || "System configuration has been saved successfully",
         });
       } else {
         throw new Error(response.error || "Failed to save configuration");
@@ -218,48 +210,40 @@ export function SystemConfig() {
     try {
       setLoading(true);
       
-      const sysConfigResponse = await getSystemConfig(clientId);
+      const response = await getSystemConfig(clientId);
       
-      if (sysConfigResponse.success) {
-        setSetupComplete(sysConfigResponse.setupComplete || false);
+      if (response.success) {
+        setSetupComplete(response.setupComplete || false);
         
-        if (sysConfigResponse.data) {
-          const config = sysConfigResponse.data;
+        if (response.data) {
+          const config = response.data;
           
           configForm.reset({
             clientId: config.clientId,
           });
           
-          if (sysConfigResponse.setupComplete) {
-            const kpiMappingsResponse = await getKpiApiMappings(clientId);
-            
-            if (kpiMappingsResponse.success && kpiMappingsResponse.data) {
-              const mappings = kpiMappingsResponse.data.kpiApiMappings;
-              
-              if (mappings && Array.isArray(mappings)) {
-                setKpiMappings(mappings.map((mapping: any, index: number) => ({
-                  id: String(index + 1),
-                  kpiName: mapping.kpiName || '',
-                  apiEndpoint: mapping.apiEndpoint || ''
-                })));
-              }
-            }
-            
-            if (config.masterSetupComplete) {
-              setCollections({
-                schemes: `schemes`,
-                executionlogs: `executionlogs`,
-                kpiconfigs: `kpiconfigs`,
-                systemconfigs: `systemconfigs`
-              });
-            }
+          if (config.kpiApiMappings && Array.isArray(config.kpiApiMappings)) {
+            setKpiMappings(config.kpiApiMappings.map((mapping: any, index: number) => ({
+              id: String(index + 1),
+              kpiName: mapping.kpiName || '',
+              apiEndpoint: mapping.apiEndpoint || ''
+            })));
+          }
+          
+          if (config.masterSetupComplete) {
+            setCollections({
+              schemes: `${clientId}.schemes`,
+              executionlogs: `${clientId}.executionlogs`,
+              kpiconfigs: `${clientId}.kpiconfigs`,
+              systemconfigs: `${clientId}.systemconfigs`,
+            });
           }
           
           toast({
             title: "Configuration Loaded",
             description: `System configuration for ${config.clientId} has been loaded.`
           });
-        } else if (sysConfigResponse.setupComplete) {
+        } else if (response.setupComplete) {
           toast({
             title: "Database Setup Complete",
             description: `Database is configured for ${clientId} but no system configuration has been saved yet.`
@@ -272,7 +256,7 @@ export function SystemConfig() {
           });
         }
       } else {
-        throw new Error(sysConfigResponse.error || "Failed to load configuration");
+        throw new Error(response.error || "Failed to load configuration");
       }
     } catch (error) {
       console.error('Error loading config:', error);
