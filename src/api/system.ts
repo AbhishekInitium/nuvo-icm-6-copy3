@@ -1,9 +1,9 @@
-
 import { apiClient } from './client';
 
 export interface SystemConfigInput {
   clientId: string;
   mongoUri: string;
+  kpiApiMappings?: Array<{ kpiName: string; apiEndpoint: string; id?: string }>;
 }
 
 export interface SystemConfigResponse {
@@ -129,7 +129,7 @@ export const setupConnection = async (clientId: string, mongoUri: string): Promi
 };
 
 /**
- * Save system configuration including MongoDB URI
+ * Save system configuration including MongoDB URI and KPI API mappings
  */
 export const saveSystemConfig = async (config: SystemConfigInput): Promise<SystemConfigResponse> => {
   try {
@@ -140,6 +140,25 @@ export const saveSystemConfig = async (config: SystemConfigInput): Promise<Syste
     return { 
       success: false, 
       error: error.response?.data?.error || error.message || 'Save configuration failed: Network error'
+    };
+  }
+};
+
+/**
+ * Save KPI API mappings configuration
+ */
+export const saveKpiApiMappings = async (clientId: string, kpiApiMappings: Array<{ kpiName: string; apiEndpoint: string; id?: string }>): Promise<SystemConfigResponse> => {
+  try {
+    const response = await apiClient.post('/integration/config', {
+      clientId,
+      kpiApiMappings
+    });
+    return response.data;
+  } catch (error) {
+    console.error('API Error saving KPI mappings:', error);
+    return { 
+      success: false, 
+      error: error.response?.data?.error || error.message || 'Save KPI mappings failed: Network error'
     };
   }
 };
@@ -158,6 +177,24 @@ export const getSystemConfig = async (clientId: string): Promise<any> => {
     return { 
       success: false, 
       error: error.response?.data?.error || error.message || 'Get configuration failed: Network error'
+    };
+  }
+};
+
+/**
+ * Get KPI API mappings
+ */
+export const getKpiApiMappings = async (clientId: string): Promise<any> => {
+  try {
+    const response = await apiClient.get(`/integration/config`, {
+      params: { clientId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('API Error getting KPI mappings:', error);
+    return { 
+      success: false, 
+      error: error.response?.data?.error || error.message || 'Get KPI mappings failed: Network error'
     };
   }
 };
