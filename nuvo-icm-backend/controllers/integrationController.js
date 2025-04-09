@@ -173,9 +173,10 @@ exports.saveKpiConfig = async (req, res) => {
     }
 
     // Create a model for the client's KPI config collection
+    // Use the full collection name from masterConfig instead of splitting it
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.kpiconfigs // Use the full collection name
     );
 
     // Check if KPI config with the same adminName already exists
@@ -275,9 +276,10 @@ exports.getKpiConfigs = async (req, res) => {
     }
 
     // Create a model for the client's KPI config collection
+    // Use the full collection name from masterConfig
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.kpiconfigs // Use the full collection name
     );
 
     // Fetch all KPI configs for this client
@@ -337,9 +339,10 @@ exports.getKpiConfigById = async (req, res) => {
     }
 
     // Create a model for the client's KPI config collection
+    // Use the full collection name from masterConfig
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.kpiconfigs // Use the full collection name
     );
 
     // Find the KPI config by ID
@@ -406,9 +409,10 @@ exports.deleteKpiConfig = async (req, res) => {
     }
 
     // Create a model for the client's KPI config collection
+    // Use the full collection name from masterConfig
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.kpiconfigs // Use the full collection name
     );
 
     // Find and delete the KPI config

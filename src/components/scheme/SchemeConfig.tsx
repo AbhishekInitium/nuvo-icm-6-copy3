@@ -16,7 +16,7 @@ export function SchemeConfig({ control }: SchemeConfigProps) {
   const { data: configsData, isLoading: configsLoading } = useQuery({
     queryKey: ['configs'],
     queryFn: async () => {
-      const response = await apiClient.get('/admin/configs');
+      const response = await apiClient.get('/integration/kpi-configs');
       return response.data.data;
     },
   });

@@ -139,7 +139,7 @@ export function useKpiConfiguratorForm() {
       console.log("Submitting KPI config:", payload);
 
       // Submit to API with the correct endpoint path
-      const response = await apiClient.post("/admin/configs", payload);
+      const response = await apiClient.post("/integration/kpi-config", payload);
       console.log("API Response:", response.data);
 
       toast({
