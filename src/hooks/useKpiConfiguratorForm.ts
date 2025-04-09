@@ -133,12 +133,12 @@ export function useKpiConfiguratorForm() {
       const payload = {
         ...values,
         adminId: crypto.randomUUID(), // This would typically come from the user's session
-        clientId: "client_001", // Updated to match the client ID used in interceptor
+        clientId: "NUVO_01", // Using a specific client ID for testing (should come from auth context in production)
       };
 
       console.log("Submitting KPI config:", payload);
 
-      // Submit to API with the correct endpoint path
+      // Submit to API with the correct endpoint path and make sure URL doesn't include clientId twice
       const response = await apiClient.post("/integration/kpi-config", payload);
       console.log("API Response:", response.data);
 
