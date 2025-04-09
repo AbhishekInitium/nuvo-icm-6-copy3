@@ -5,20 +5,28 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Control } from "react-hook-form";
 import { SchemeFormValues } from "@/hooks/useSchemeForm";
-import { apiClient } from "@/api/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SchemeConfigProps {
   control: Control<SchemeFormValues>;
 }
 
 export function SchemeConfig({ control }: SchemeConfigProps) {
-  // Fetch available configs for dropdown
+  const { user } = useAuth();
+  
+  // Fetch available configs for dropdown using the client's database
   const { data: configsData, isLoading: configsLoading } = useQuery({
-    queryKey: ['configs'],
+    queryKey: ['configs', user?.clientId],
     queryFn: async () => {
-      const response = await apiClient.get('/admin/configs');
-      return response.data.data;
+      // Use the manager API endpoint that fetches configs from client DB
+      const response = await fetch(`http://localhost:3000/api/manager/available-configs?clientId=${user?.clientId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch configurations');
+      }
+      const data = await response.json();
+      return data.data;
     },
+    enabled: !!user?.clientId, // Only run query if we have a clientId
   });
 
   return (

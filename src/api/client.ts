@@ -10,16 +10,14 @@ export const apiClient = axios.create({
   withCredentials: true // Important for CORS with credentials
 });
 
-// Add request interceptor for debugging
+// Add request interceptor to include clientId from auth context
 apiClient.interceptors.request.use(
   (config) => {
     console.log('API Request:', {
       url: config.url,
       method: config.method,
       data: config.data,
-      headers: config.headers,
-      baseURL: config.baseURL,
-      fullURL: config.baseURL + config.url
+      headers: config.headers
     });
     
     // Get stored user data from localStorage if available
@@ -28,10 +26,19 @@ apiClient.interceptors.request.use(
     
     // Only add client ID to non-auth requests
     if (clientId && !config.url?.includes('/auth/')) {
-      if (config.url?.includes('?')) {
-        config.url = `${config.url}&clientId=${clientId}`;
+      // Add clientId as query parameter for GET requests
+      if (config.method?.toLowerCase() === 'get') {
+        if (config.url?.includes('?')) {
+          config.url = `${config.url}&clientId=${clientId}`;
+        } else {
+          config.url = `${config.url}?clientId=${clientId}`;
+        }
+      } 
+      // Add clientId to request body for non-GET requests
+      else if (config.data) {
+        config.data = { ...config.data, clientId };
       } else {
-        config.url = `${config.url}?clientId=${clientId}`;
+        config.data = { clientId };
       }
     }
     
@@ -54,15 +61,12 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Handle error cases, like 401, 403, etc.
     console.error('API Error:', error);
     console.error('API Error Details:', {
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
-      data: error.response?.data,
-      baseURL: error.config?.baseURL,
-      fullURL: error.config?.baseURL + error.config?.url
+      data: error.response?.data
     });
     return Promise.reject(error);
   }
