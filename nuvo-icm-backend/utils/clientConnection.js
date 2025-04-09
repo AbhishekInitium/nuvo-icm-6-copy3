@@ -38,27 +38,49 @@ async function connectClientDb(clientId) {
   try {
     // Create a new connection to the client's MongoDB
     console.log(`[MongoDB] Connecting to MongoDB for client: ${clientId} - URI: ${config.mongoUri.replace(/mongodb(\+srv)?:\/\/([^:]+):([^@]+)@/, 'mongodb$1://$2:***@')}`);
-    const conn = await mongoose.createConnection(config.mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
+    
+    // Create a new connection with proper error handling
+    const conn = mongoose.createConnection();
+    
+    // Create a promise that resolves when connected or rejects on error
+    const connectionPromise = new Promise((resolve, reject) => {
+      conn.once('connected', () => {
+        console.log(`[MongoDB] Connected to MongoDB for client: ${clientId}`);
+        resolve(conn);
+      });
+      
+      conn.once('error', (err) => {
+        console.error(`[MongoDB] Connection error for client ${clientId}:`, err);
+        reject(err);
+      });
+      
+      // Start the connection
+      conn.openUri(config.mongoUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 10000 // 10 seconds timeout
+      }).catch(reject);
     });
+    
+    // Wait for connection to be established
+    const connection = await connectionPromise;
 
-    // Set up connection error handlers
-    conn.on('error', (err) => {
+    // Set up connection error handlers for future events
+    connection.on('error', (err) => {
       console.error(`[MongoDB] Connection error for client ${clientId}:`, err);
       delete cachedConnections[clientId];
     });
 
-    conn.on('disconnected', () => {
+    connection.on('disconnected', () => {
       console.log(`[MongoDB] Disconnected for client ${clientId}`);
       delete cachedConnections[clientId];
     });
 
     // Cache the connection
-    cachedConnections[clientId] = conn;
-    console.log(`[MongoDB] Connected to MongoDB for client: ${clientId} (Host: ${conn.host}, Port: ${conn.port}, DB: ${conn.name})`);
+    cachedConnections[clientId] = connection;
+    console.log(`[MongoDB] Connected to MongoDB for client: ${clientId} (Host: ${connection.host}, Port: ${connection.port}, DB: ${connection.name})`);
     
-    return conn;
+    return connection;
   } catch (error) {
     console.error(`[MongoDB] Failed to connect to MongoDB for client ${clientId}:`, error);
     console.error(`[MongoDB] Error details - Name: ${error.name}, Code: ${error.code}, Message: ${error.message}`);
