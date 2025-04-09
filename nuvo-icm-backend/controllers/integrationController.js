@@ -173,9 +173,10 @@ exports.saveKpiConfig = async (req, res) => {
     }
 
     // Create a model for the client's KPI config collection
+    // Use the non-prefixed collection name
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.kpiconfigs
     );
 
     // Check if KPI config with the same adminName already exists
@@ -275,9 +276,10 @@ exports.getKpiConfigs = async (req, res) => {
     }
 
     // Create a model for the client's KPI config collection
+    // Use the non-prefixed collection name
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.kpiconfigs
     );
 
     // Fetch all KPI configs for this client
@@ -337,9 +339,10 @@ exports.getKpiConfigById = async (req, res) => {
     }
 
     // Create a model for the client's KPI config collection
+    // Use the non-prefixed collection name
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.kpiconfigs
     );
 
     // Find the KPI config by ID
@@ -406,9 +409,10 @@ exports.deleteKpiConfig = async (req, res) => {
     }
 
     // Create a model for the client's KPI config collection
+    // Use the non-prefixed collection name
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
+      masterConfig.collections.kpiconfigs
     );
 
     // Find and delete the KPI config
