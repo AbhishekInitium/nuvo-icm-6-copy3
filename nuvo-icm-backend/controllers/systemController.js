@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
 const MasterConfig = require('../models/MasterConfig');
@@ -338,7 +339,7 @@ exports.setConnection = async (req, res) => {
  */
 exports.saveSystemConfig = async (req, res) => {
   try {
-    const { clientId, ...otherConfig } = req.body;
+    const { clientId, mongoUri, defaultCurrency, kpiApiMappings } = req.body;
 
     if (!clientId) {
       return res.status(400).json({ 
@@ -385,14 +386,20 @@ exports.saveSystemConfig = async (req, res) => {
       // Update existing config
       config = await ClientSystemConfig.findOneAndUpdate(
         { clientId },
-        otherConfig,
+        { 
+          mongoUri,
+          defaultCurrency,
+          kpiApiMappings
+        },
         { new: true, runValidators: true }
       );
     } else {
       // Create new config
       config = await ClientSystemConfig.create({
         clientId,
-        ...otherConfig
+        mongoUri,
+        defaultCurrency,
+        kpiApiMappings
       });
     }
 

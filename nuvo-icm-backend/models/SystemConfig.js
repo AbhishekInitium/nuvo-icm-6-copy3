@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 /**
- * System Configuration Schema for SAP and External API Integration
+ * System Configuration Schema for External API Integration
  */
 const SystemConfigSchema = new mongoose.Schema({
   clientId: {
@@ -15,29 +15,6 @@ const SystemConfigSchema = new mongoose.Schema({
     type: String,
     required: [true, 'MongoDB URI is required'],
     trim: true
-  },
-  sapSystemId: {
-    type: String,
-    required: [true, 'SAP System ID is required'],
-    trim: true
-  },
-  sapBaseUrl: {
-    type: String,
-    required: [true, 'SAP Base URL is required'],
-    trim: true
-  },
-  sapDestinationName: {
-    type: String,
-    trim: true
-  },
-  sapUsername: {
-    type: String,
-    required: [true, 'SAP Username is required'],
-    trim: true
-  },
-  sapPassword: {
-    type: String,
-    required: [true, 'SAP Password is required']
   },
   defaultCurrency: {
     type: String,
@@ -53,7 +30,7 @@ const SystemConfigSchema = new mongoose.Schema({
       },
       sourceType: {
         type: String,
-        enum: ['SAP', 'External'],
+        enum: ['External'],
         required: [true, 'Source Type is required']
       },
       sourceField: {

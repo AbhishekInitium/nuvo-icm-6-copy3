@@ -11,11 +11,6 @@ exports.saveSystemConfig = async (req, res) => {
   try {
     const { 
       clientId, 
-      sapSystemId, 
-      sapBaseUrl, 
-      sapDestinationName, 
-      sapUsername, 
-      sapPassword,
       defaultCurrency,
       kpiApiMappings 
     } = req.body;
@@ -45,11 +40,6 @@ exports.saveSystemConfig = async (req, res) => {
       systemConfig = await SystemConfig.findOneAndUpdate(
         { clientId },
         { 
-          sapSystemId, 
-          sapBaseUrl, 
-          sapDestinationName, 
-          sapUsername, 
-          sapPassword,
           defaultCurrency,
           kpiApiMappings 
         },
@@ -59,11 +49,6 @@ exports.saveSystemConfig = async (req, res) => {
       // Create new configuration
       systemConfig = await SystemConfig.create({
         clientId,
-        sapSystemId,
-        sapBaseUrl,
-        sapDestinationName,
-        sapUsername,
-        sapPassword,
         defaultCurrency,
         kpiApiMappings
       });
@@ -73,11 +58,6 @@ exports.saveSystemConfig = async (req, res) => {
       success: true,
       data: {
         clientId: systemConfig.clientId,
-        sapSystemId: systemConfig.sapSystemId,
-        sapBaseUrl: systemConfig.sapBaseUrl,
-        sapDestinationName: systemConfig.sapDestinationName,
-        sapUsername: systemConfig.sapUsername,
-        // Don't return the password
         defaultCurrency: systemConfig.defaultCurrency,
         kpiApiMappings: systemConfig.kpiApiMappings,
         createdAt: systemConfig.createdAt
@@ -131,11 +111,6 @@ exports.getSystemConfig = async (req, res) => {
       success: true,
       data: {
         clientId: systemConfig.clientId,
-        sapSystemId: systemConfig.sapSystemId,
-        sapBaseUrl: systemConfig.sapBaseUrl,
-        sapDestinationName: systemConfig.sapDestinationName,
-        sapUsername: systemConfig.sapUsername,
-        // Don't return the password
         defaultCurrency: systemConfig.defaultCurrency,
         kpiApiMappings: systemConfig.kpiApiMappings,
         createdAt: systemConfig.createdAt

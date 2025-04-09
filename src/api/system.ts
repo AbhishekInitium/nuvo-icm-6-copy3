@@ -1,13 +1,9 @@
-
 import { apiClient } from './client';
 
 export interface SystemConfigInput {
   clientId: string;
   mongoUri: string;
-  sapSystemId?: string;
-  sapBaseUrl?: string;
-  sapUsername?: string;
-  sapPassword?: string;
+  defaultCurrency?: string;
 }
 
 export interface SystemConfigResponse {

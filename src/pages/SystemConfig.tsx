@@ -5,10 +5,9 @@ import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Save, Download, Database, Check, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Save, Database, Check, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { saveSystemConfig, getSystemConfig, SystemConfigInput, testConnection, setupConnection } from '@/api/system';
@@ -24,10 +23,7 @@ const databaseSetupSchema = z.object({
 
 const systemConfigSchema = z.object({
   clientId: z.string().min(3, { message: "Client ID must be at least 3 characters" }),
-  sapSystemId: z.string().optional(),
-  sapBaseUrl: z.string().url({ message: "Must be a valid URL" }).optional().or(z.literal('')),
-  sapUsername: z.string().optional(),
-  sapPassword: z.string().optional()
+  defaultCurrency: z.string().optional()
 });
 
 interface KpiMapping {
@@ -63,10 +59,7 @@ export function SystemConfig() {
     resolver: zodResolver(systemConfigSchema),
     defaultValues: {
       clientId: user?.clientId || '',
-      sapSystemId: '',
-      sapBaseUrl: '',
-      sapUsername: '',
-      sapPassword: ''
+      defaultCurrency: 'USD'
     }
   });
 
@@ -181,10 +174,7 @@ export function SystemConfig() {
       const configData: SystemConfigInput = {
         clientId: data.clientId,
         mongoUri: setupForm.getValues('mongoUri'),
-        sapSystemId: data.sapSystemId,
-        sapBaseUrl: data.sapBaseUrl,
-        sapUsername: data.sapUsername,
-        sapPassword: data.sapPassword
+        defaultCurrency: data.defaultCurrency
       };
       
       const response = await saveSystemConfig(configData);
@@ -232,10 +222,7 @@ export function SystemConfig() {
           
           configForm.reset({
             clientId: config.clientId,
-            sapSystemId: config.sapSystemId || '',
-            sapBaseUrl: config.sapBaseUrl || '',
-            sapUsername: config.sapUsername || '',
-            sapPassword: config.sapPassword || ''
+            defaultCurrency: config.defaultCurrency || 'USD'
           });
           
           if (config.kpiApiMappings && Array.isArray(config.kpiApiMappings)) {
@@ -429,76 +416,27 @@ export function SystemConfig() {
           <Card className="mb-6">
             <CardHeader className="bg-green-50">
               <CardTitle className="text-green-700 text-lg font-bold">
-                SAP System Connection
+                System Settings
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={configForm.control}
-                  name="sapSystemId"
+                  name="defaultCurrency"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>SAP System ID</FormLabel>
+                      <FormLabel>Default Currency</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="e.g., PRD, DEV, QAS"
+                          placeholder="e.g., USD, EUR, GBP"
                           disabled={!setupComplete}
                         />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={configForm.control}
-                  name="sapBaseUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SAP Base URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="e.g., https://sap-api.example.com/client1"
-                          disabled={!setupComplete}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={configForm.control}
-                  name="sapUsername"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SAP Username</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="e.g., sap_service_user"
-                          disabled={!setupComplete}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={configForm.control}
-                  name="sapPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SAP Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="password"
-                          placeholder="********"
-                          disabled={!setupComplete}
-                        />
-                      </FormControl>
+                      <FormDescription>
+                        Default currency for calculations
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
