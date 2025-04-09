@@ -22,12 +22,12 @@ apiClient.interceptors.request.use(
       fullURL: config.baseURL + config.url
     });
     
-    // Hard-code the client ID for testing purposes
-    // This would usually come from authentication context
-    const clientId = "NUVO_01";
+    // Get stored user data from localStorage if available
+    const storedUser = localStorage.getItem("auth_user");
+    const clientId = storedUser ? JSON.parse(storedUser).clientId : null;
     
-    // Only add client ID if it's not already in the URL
-    if (clientId && !config.url?.includes('clientId=')) {
+    // Only add client ID to non-auth requests
+    if (clientId && !config.url?.includes('/auth/')) {
       if (config.url?.includes('?')) {
         config.url = `${config.url}&clientId=${clientId}`;
       } else {
