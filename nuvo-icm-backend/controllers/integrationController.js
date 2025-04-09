@@ -46,6 +46,7 @@ exports.saveSystemConfig = async (req, res) => {
     }
 
     // Create a model for the client's system config collection
+    // IMPORTANT: Use the clientDbConnection to ensure we're not creating in master DB
     const ClientSystemConfig = clientDbConnection.model('SystemConfig', 
       new mongoose.Schema({
         clientId: String,
@@ -130,6 +131,7 @@ exports.getSystemConfig = async (req, res) => {
     }
 
     // Create a model for the client's system config collection
+    // IMPORTANT: Use the clientDbConnection to ensure we're querying the client DB, not master
     const ClientSystemConfig = clientDbConnection.model('SystemConfig', 
       new mongoose.Schema({
         clientId: String,
