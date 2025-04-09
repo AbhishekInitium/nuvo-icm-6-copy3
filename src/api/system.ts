@@ -157,7 +157,7 @@ export const setupConnection = async (clientId: string, mongoUri: string): Promi
  */
 export const saveSystemConfig = async (config: SystemConfigInput): Promise<SystemConfigResponse> => {
   try {
-    const response = await apiClient.post('/integration/config', config);
+    const response = await apiClient.post('/system/config', config);
     return response.data;
   } catch (error) {
     console.error('API Error during save config:', error);
@@ -243,7 +243,7 @@ export const deleteKpiConfig = async (id: string, clientId: string): Promise<any
  */
 export const getSystemConfig = async (clientId: string): Promise<any> => {
   try {
-    const response = await apiClient.get(`/integration/config`, {
+    const response = await apiClient.get(`/system/config`, {
       params: { clientId }
     });
     return response.data;

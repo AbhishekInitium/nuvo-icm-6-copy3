@@ -160,7 +160,7 @@ exports.saveKpiConfig = async (req, res) => {
       });
     }
 
-    // Connect to client database using the stored MongoDB URI
+    // Connect to client database
     let clientDbConnection;
     try {
       clientDbConnection = await connectClientDb(clientId);
@@ -172,14 +172,10 @@ exports.saveKpiConfig = async (req, res) => {
       });
     }
 
-    // Get the client-specific collection name for KPI configs
-    const kpiConfigCollection = masterConfig.collections.kpiconfigs.split('.')[1];
-    console.log(`Using KPI config collection for client ${clientId}: ${kpiConfigCollection}`);
-
     // Create a model for the client's KPI config collection
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      kpiConfigCollection // Use the client-specific collection name
+      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
     );
 
     // Check if KPI config with the same adminName already exists
@@ -278,14 +274,10 @@ exports.getKpiConfigs = async (req, res) => {
       });
     }
 
-    // Get the client-specific collection name for KPI configs
-    const kpiConfigCollection = masterConfig.collections.kpiconfigs.split('.')[1];
-    console.log(`Using KPI config collection for client ${clientId}: ${kpiConfigCollection}`);
-
     // Create a model for the client's KPI config collection
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      kpiConfigCollection // Use the client-specific collection name
+      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
     );
 
     // Fetch all KPI configs for this client
@@ -344,14 +336,10 @@ exports.getKpiConfigById = async (req, res) => {
       });
     }
 
-    // Get the client-specific collection name for KPI configs
-    const kpiConfigCollection = masterConfig.collections.kpiconfigs.split('.')[1];
-    console.log(`Using KPI config collection for client ${clientId}: ${kpiConfigCollection}`);
-
     // Create a model for the client's KPI config collection
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      kpiConfigCollection // Use the client-specific collection name
+      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
     );
 
     // Find the KPI config by ID
@@ -417,14 +405,10 @@ exports.deleteKpiConfig = async (req, res) => {
       });
     }
 
-    // Get the client-specific collection name for KPI configs
-    const kpiConfigCollection = masterConfig.collections.kpiconfigs.split('.')[1];
-    console.log(`Using KPI config collection for client ${clientId}: ${kpiConfigCollection}`);
-
     // Create a model for the client's KPI config collection
     const ClientKpiConfig = clientDbConnection.model('KpiConfig', 
       KpiConfig.schema, 
-      kpiConfigCollection // Use the client-specific collection name
+      masterConfig.collections.kpiconfigs.split('.')[1] // Use the client-specific collection
     );
 
     // Find and delete the KPI config
